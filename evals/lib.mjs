@@ -14,6 +14,9 @@ export function listFiles(root, dir = '') {
     .sort();
 }
 
+// Exploring the generator is fine (even in the reuse case); only real generation counts.
+const LOOK_ONLY = /\s--(?:list|help|dry-run)\b/;
+
 // claude -p --output-format stream-json: one JSON message per line.
 export function generatorCalls(streamJson) {
   return streamJson.split('\n').flatMap((line) => {
@@ -26,7 +29,8 @@ export function generatorCalls(streamJson) {
     if (msg.type !== 'assistant') return [];
     return (msg.message?.content ?? [])
       .filter((block) => block.type === 'tool_use' && block.name === 'Bash' && /generate\.mjs/.test(block.input?.command ?? ''))
-      .map((block) => block.input.command);
+      .map((block) => block.input.command)
+      .filter((command) => !LOOK_ONLY.test(command));
   });
 }
 

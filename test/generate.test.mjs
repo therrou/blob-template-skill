@@ -322,3 +322,15 @@ test('form-field --with-test renders inside a Form harness', () => {
   assert.match(t, /import \{ Form \} from '@\/components\/ui\/form';/);
   assert.match(t, /getByLabelText\('Label'\)/);
 });
+
+test('an override that ignores a flag the skill template handles is refused, writing nothing', () => {
+  const override = 'export function {{name.pascal}}() { return null; }\n';
+  const root = makeRepo({
+    deps: { 'class-variance-authority': '^0.7' },
+    files: { '.codegen/templates/react/component/component.tsx.tpl': override },
+  });
+  const { status, json } = run(root, 'react', 'component', '--name', 'Card', '--element', 'div', '--variants');
+  assert.equal(status, 1);
+  assert.match(json.error, /override .*component\/component\.tsx\.tpl ignores --variants/);
+  assert.equal(fs.existsSync(path.join(root, 'components')), false);
+});

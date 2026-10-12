@@ -57,8 +57,22 @@ export function loadPack(skillDir, pack) {
 function resolveTemplate(skillDir, root, pack, ref) {
   const [owner, rel] = ref.startsWith('@') ? [ref.slice(1, ref.indexOf('/')), ref.slice(ref.indexOf('/') + 1)] : [pack, ref];
   const override = path.join(root, '.codegen', 'templates', owner, rel);
-  if (fs.existsSync(override)) return { file: override, overridden: true };
-  return { file: path.join(skillDir, 'packs', owner, 'templates', rel), overridden: false };
+  const shipped = path.join(skillDir, 'packs', owner, 'templates', rel);
+  if (fs.existsSync(override)) return { file: override, overridden: true, shipped, label: `.codegen/templates/${owner}/${rel}` };
+  return { file: shipped, overridden: false };
+}
+
+// An override written before a flag existed would silently drop it (and break files that rely on it).
+function assertOverrideHandles(template, gen, ctx) {
+  const shipped = fs.readFileSync(template.shipped, 'utf8');
+  const override = fs.readFileSync(template.file, 'utf8');
+  for (const [key, spec] of Object.entries(gen.options ?? {})) {
+    if (spec.type !== 'boolean' || !ctx[camel(key)]) continue;
+    const usesFlag = new RegExp(`\\{\\{#(?:if|unless) ${camel(key)}\\}\\}`);
+    if (usesFlag.test(shipped) && !usesFlag.test(override)) {
+      throw new CodegenError(`Repo override ${template.label} ignores --${key}. Update it from the skill template or drop the flag.`);
+    }
+  }
 }
 
 function requiredPackages(gen, ctx) {
@@ -92,6 +106,7 @@ export function plan({ skillDir, root, pack, generator, options }) {
       continue;
     }
     if (spec.type === 'string' && typeof value !== 'string') throw new CodegenError(`--${key} needs a value.`);
+    if (spec.type === 'boolean' && value !== true) throw new CodegenError(`--${key} is a flag and takes no value.`);
     if (spec.choices && !spec.choices.includes(value)) {
       throw new CodegenError(`--${key} must be one of: ${spec.choices.join(', ')}. Got "${value}".`);
     }
@@ -163,7 +178,9 @@ export function plan({ skillDir, root, pack, generator, options }) {
   const files = gen.files
     .filter((f) => !f.when || Boolean(ctx[f.when]))
     .map((f) => {
-      const { file, overridden } = resolveTemplate(skillDir, root, pack, f.template);
+      const template = resolveTemplate(skillDir, root, pack, f.template);
+      const { file, overridden } = template;
+      if (overridden) assertOverrideHandles(template, gen, ctx);
       const abs = path.join(outDir, render(f.path, ctx, `path of ${f.template}`));
       return {
         abs,

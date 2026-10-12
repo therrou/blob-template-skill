@@ -62,3 +62,14 @@ test('every case is well-formed and its generator call succeeds against the fixt
     assert.equal(JSON.parse(r.stdout).ok, true, `${c.id}: ${r.stdout}`);
   }
 });
+
+test('generatorCalls ignores look-only calls (--list, --help, --dry-run)', () => {
+  const call = (command) => JSON.stringify({ type: 'assistant', message: { content: [{ type: 'tool_use', name: 'Bash', input: { command } }] } });
+  const stream = [
+    call('node .agents/skills/codegen/scripts/generate.mjs --list next'),
+    call('node .agents/skills/codegen/scripts/generate.mjs --help'),
+    call('node .agents/skills/codegen/scripts/generate.mjs next hook --name x --dry-run'),
+    call('node .agents/skills/codegen/scripts/generate.mjs next hook --name x'),
+  ].join('\n');
+  assert.deepEqual(generatorCalls(stream), ['node .agents/skills/codegen/scripts/generate.mjs next hook --name x']);
+});

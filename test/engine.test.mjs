@@ -123,3 +123,9 @@ test('missing packages and primitives are reported together', () => {
     (err) => assert.equal(err.details.install, 'npm i react-hook-form && npx shadcn@latest add form'),
   );
 });
+
+test('boolean option given a value is an error, not silently true', () => {
+  const gen = { options: { fancy: { type: 'boolean', description: 'f' } } };
+  assert.throws(() => planWith(gen, { options: { fancy: 'false' } }), /--fancy is a flag and takes no value/);
+  assert.doesNotThrow(() => planWith(gen, { options: { fancy: true } }));
+});
