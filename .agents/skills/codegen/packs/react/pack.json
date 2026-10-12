@@ -61,6 +61,21 @@
         { "template": "page/page.tsx.tpl", "path": "{{name.kebab}}-page.tsx" },
         { "template": "page/page.test.tsx.tpl", "path": "{{name.kebab}}-page.test.tsx", "when": "withTest" }
       ]
+    },
+    "form-field": {
+      "description": "react-hook-form field on the shadcn form primitives: label, control, description and error wired for a11y. Validation lives in the form's zod schema.",
+      "out": "components",
+      "requires": ["react-hook-form"],
+      "requiresUi": ["form", "{{control}}"],
+      "options": {
+        "control": { "type": "string", "required": true, "choices": ["input", "textarea", "select", "checkbox"], "description": "Which shadcn control the field renders." },
+        "with-test": { "type": "boolean", "description": "Add a Testing Library test inside a Form harness." }
+      },
+      "files": [
+        { "template": "form-field/form-field.tsx.tpl", "path": "{{name.kebab}}/{{name.kebab}}.tsx" },
+        { "template": "form-field/index.ts.tpl", "path": "{{name.kebab}}/index.ts" },
+        { "template": "form-field/form-field.test.tsx.tpl", "path": "{{name.kebab}}/{{name.kebab}}.test.tsx", "when": "withTest" }
+      ]
     }
   }
 }

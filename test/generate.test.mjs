@@ -258,3 +258,67 @@ test('a 0.1.0-era component.tsx override still generates', () => {
   assert.deepEqual(json.overridden, ['components/old/old.tsx']);
   assert.equal(read(root, 'components/old/old.tsx'), 'export function Old() { return null; }\n');
 });
+
+const formRepo = (extraUi = [], extra = {}) =>
+  makeRepo({
+    deps: { 'react-hook-form': '^7', zod: '^3', ...extra.deps },
+    files: {
+      'components.json': JSON.stringify({ aliases: { utils: '@/lib/utils', ui: '@/components/ui' } }),
+      ...Object.fromEntries(['form', ...extraUi].map((ui) => [`src/components/ui/${ui}.tsx`, ''])),
+      ...extra.files,
+    },
+  });
+
+test('form-field needs react-hook-form and the shadcn primitives', () => {
+  const noRhf = run(makeRepo(), 'react', 'form-field', '--name', 'EmailField', '--control', 'input');
+  assert.equal(noRhf.status, 1);
+  assert.deepEqual(noRhf.json.missing, ['react-hook-form']);
+
+  const noUi = run(formRepo(), 'react', 'form-field', '--name', 'EmailField', '--control', 'input');
+  assert.equal(noUi.status, 1);
+  assert.deepEqual(noUi.json.missingUi, ['input']);
+  assert.equal(noUi.json.install, 'npx shadcn@latest add input');
+
+  assert.match(run(formRepo(), 'react', 'form-field', '--name', 'X').json.error, /Missing required --control \(one of: input, textarea, select, checkbox\)/);
+});
+
+test('form-field input (next): client component wired to the form primitives in src/', () => {
+  const root = formRepo(['input'], { deps: { next: '^15' } });
+  const { status, json } = run(root, 'next', 'form-field', '--name', 'EmailField', '--control', 'input');
+  assert.equal(status, 0, JSON.stringify(json));
+  assert.deepEqual(json.created, ['src/components/email-field/email-field.tsx', 'src/components/email-field/index.ts']);
+  const src = read(root, 'src/components/email-field/email-field.tsx');
+  assert.match(src, /^'use client';/);
+  assert.match(src, /import \{ useFormContext, type FieldPath, type FieldValues \} from 'react-hook-form';/);
+  assert.match(src, /from '@\/components\/ui\/form';/);
+  assert.match(src, /import \{ Input \} from '@\/components\/ui\/input';/);
+  assert.match(src, /export function EmailField<TValues extends FieldValues = FieldValues>\(/);
+  assert.match(src, /<Input \{\.\.\.field\} \/>/);
+  assert.match(src, /<FormMessage \/>/);
+  assert.doesNotMatch(src, /Select|Checkbox|Textarea/);
+  assert.ok(json.todo.some((t) => /autoComplete/.test(t.text)));
+});
+
+test('form-field select and checkbox (react): right primitives, no use client', () => {
+  const root = formRepo(['select', 'checkbox']);
+  run(root, 'react', 'form-field', '--name', 'PlanField', '--control', 'select');
+  const select = read(root, 'src/components/plan-field/plan-field.tsx');
+  assert.doesNotMatch(select, /'use client'/);
+  assert.match(select, /options: \{ value: string; label: string \}\[\];/);
+  assert.match(select, /<Select onValueChange=\{field\.onChange\} defaultValue=\{field\.value\}>/);
+  assert.match(select, /<SelectItem key=\{option\.value\} value=\{option\.value\}>/);
+
+  run(root, 'react', 'form-field', '--name', 'TermsField', '--control', 'checkbox');
+  assert.match(read(root, 'src/components/terms-field/terms-field.tsx'), /<Checkbox checked=\{field\.value === true\} onCheckedChange=\{\(checked\) => field\.onChange\(checked === true\)\} \/>/);
+});
+
+test('form-field --with-test renders inside a Form harness', () => {
+  const root = formRepo(['checkbox'], { deps: { vitest: '^2' } });
+  const { status, json } = run(root, 'react', 'form-field', '--name', 'TermsField', '--control', 'checkbox', '--with-test');
+  assert.equal(status, 0, JSON.stringify(json));
+  const t = read(root, 'src/components/terms-field/terms-field.test.tsx');
+  assert.match(t, /from 'vitest'/);
+  assert.match(t, /useForm\(\{ defaultValues: \{ field: false \} \}\)/);
+  assert.match(t, /import \{ Form \} from '@\/components\/ui\/form';/);
+  assert.match(t, /getByLabelText\('Label'\)/);
+});
