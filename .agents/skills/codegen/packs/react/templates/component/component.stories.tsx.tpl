@@ -6,6 +6,9 @@ const meta = {
   component: {{name.pascal}},
   args: {
     children: '{{name.pascal}}',
+{{#if elementIs.a}}
+    href: '/',
+{{/if}}
   },
 } satisfies Meta<typeof {{name.pascal}}>;
 

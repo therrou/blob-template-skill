@@ -14,6 +14,7 @@ import {
   resolveOut,
 } from './detect.mjs';
 import { installCommand, missingDependencies } from './deps.mjs';
+import { elementVars } from './elements.mjs';
 import { parseName } from './names.mjs';
 import { parseRoute } from './route.mjs';
 import { findTodos, render } from './template.mjs';
@@ -131,6 +132,10 @@ export function plan({ skillDir, root, pack, generator, options }) {
       `Missing requirements for ${pack}/${generator}: ${names.join(', ')}. Ask the user before installing, then rerun.`,
       { missing, missingUi, install },
     );
+  }
+
+  if (ctx.element) {
+    ctx.el = elementVars({ element: ctx.element, name: ctx.name, variants: ctx.variants, asChild: ctx.asChild, cn: ctx.cn });
   }
 
   ctx.vitest = false;

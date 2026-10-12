@@ -7,7 +7,7 @@ import { makeRepo, read, run } from './helpers.mjs';
 
 test('react component: kebab folder under src/, named export, cn import, no test by default', () => {
   const root = makeRepo({ deps: { vitest: '^2' }, dirs: ['src'] });
-  const { status, json } = run(root, 'react', 'component', '--name', 'UserCard', '--cn', '@/lib/utils');
+  const { status, json } = run(root, 'react', 'component', '--name', 'UserCard', '--element', 'article', '--cn', '@/lib/utils');
   assert.equal(status, 0, JSON.stringify(json));
   assert.deepEqual(json.created, ['src/components/user-card/user-card.tsx', 'src/components/user-card/index.ts']);
   const src = read(root, 'src/components/user-card/user-card.tsx');
@@ -21,7 +21,7 @@ test('react component: kebab folder under src/, named export, cn import, no test
 
 test('--with-test uses the detected runner; vitest imports its globals', () => {
   const root = makeRepo({ deps: { vitest: '^2' } });
-  const { status, json } = run(root, 'react', 'component', '--name', 'card', '--with-test');
+  const { status, json } = run(root, 'react', 'component', '--name', 'card', '--element', 'div', '--with-test');
   assert.equal(status, 0, JSON.stringify(json));
   const t = read(root, 'components/card/card.test.tsx');
   assert.match(t, /from 'vitest'/);
@@ -44,9 +44,9 @@ test('--with-test fails without a detectable runner and writes nothing', () => {
 
 test('--with-story requires .storybook and imports the detected framework types', () => {
   const root = makeRepo({ deps: { '@storybook/nextjs': '^8' } });
-  assert.equal(run(root, 'next', 'client-component', '--name', 'Tabs', '--with-story').status, 1);
+  assert.equal(run(root, 'next', 'client-component', '--name', 'Tabs', '--element', 'div', '--with-story').status, 1);
   fs.mkdirSync(path.join(root, '.storybook'));
-  const { status } = run(root, 'next', 'client-component', '--name', 'Tabs', '--with-story');
+  const { status } = run(root, 'next', 'client-component', '--name', 'Tabs', '--element', 'div', '--with-story');
   assert.equal(status, 0);
   assert.match(read(root, 'components/tabs/tabs.stories.tsx'), /from '@storybook\/nextjs'/);
   assert.match(read(root, 'components/tabs/tabs.tsx'), /^'use client';/);
@@ -54,13 +54,13 @@ test('--with-story requires .storybook and imports the detected framework types'
 
 test('next component is a Server Component (no use client)', () => {
   const root = makeRepo();
-  run(root, 'next', 'component', '--name', 'Hero');
+  run(root, 'next', 'component', '--name', 'Hero', '--element', 'section');
   assert.doesNotMatch(read(root, 'components/hero/hero.tsx'), /^'use client';/m);
 });
 
 test('existing files abort the whole generation (atomic, never overwrite)', () => {
   const root = makeRepo({ files: { 'components/card/index.ts': 'keep me' } });
-  const { status, json } = run(root, 'react', 'component', '--name', 'card');
+  const { status, json } = run(root, 'react', 'component', '--name', 'card', '--element', 'div');
   assert.equal(status, 1);
   assert.deepEqual(json.conflicts, ['components/card/index.ts']);
   assert.equal(fs.existsSync(path.join(root, 'components/card/card.tsx')), false);
@@ -143,4 +143,118 @@ test('--list describes packs and generators', () => {
   assert.equal(status, 0);
   assert.ok(json.packs.react.generators.component.description);
   assert.ok(json.packs.next.generators.route.options['with-layout']);
+});
+
+import { plan } from '../.agents/skills/codegen/scripts/lib/generate.mjs';
+import { skillDir } from './helpers.mjs';
+
+test('component requires --element from the allowlist and writes nothing otherwise', () => {
+  const root = makeRepo();
+  const missing = run(root, 'react', 'component', '--name', 'Card');
+  assert.equal(missing.status, 1);
+  assert.match(missing.json.error, /Missing required --element \(one of: div, span, section/);
+  assert.match(run(root, 'react', 'component', '--name', 'Card', '--element', 'img').json.error, /--element must be one of/);
+  assert.match(run(root, 'react', 'component', '--name', 'Card', '--element', '--variants').json.error, /--element needs a value/);
+  assert.equal(fs.existsSync(path.join(root, 'components')), false);
+});
+
+test('--element button: typed props, type="button" default and an a11y todo', () => {
+  const root = makeRepo();
+  const { status, json } = run(root, 'react', 'component', '--name', 'IconButton', '--element', 'button');
+  assert.equal(status, 0, JSON.stringify(json));
+  const src = read(root, 'components/icon-button/icon-button.tsx');
+  assert.match(src, /export type IconButtonProps = ComponentProps<'button'> & \{/);
+  assert.match(src, /export function IconButton\(\{ className, type = 'button', children, \.\.\.props \}: IconButtonProps\)/);
+  assert.match(src, /<button className=\{className\} type=\{type\} \{\.\.\.props\}>/);
+  assert.match(src, /<\/button>/);
+  assert.ok(json.todo.some((t) => /aria-label/.test(t.text)));
+});
+
+test('--element a requires href, also in the generated test and story', () => {
+  const root = makeRepo({ deps: { vitest: '^2', '@storybook/react-vite': '^8' }, dirs: ['.storybook'] });
+  run(root, 'react', 'component', '--name', 'NavLink', '--element', 'a', '--with-test', '--with-story');
+  assert.match(read(root, 'components/nav-link/nav-link.tsx'), /Omit<ComponentProps<'a'>, 'href'> & \{ href: string \}/);
+  assert.match(read(root, 'components/nav-link/nav-link.test.tsx'), /<NavLink href="\/">content<\/NavLink>/);
+  assert.match(read(root, 'components/nav-link/nav-link.stories.tsx'), /href: '\/',/);
+});
+
+test('--variants needs class-variance-authority; then generates cva with the detected cn', () => {
+  const bare = makeRepo();
+  const failed = run(bare, 'react', 'component', '--name', 'Badge', '--element', 'span', '--variants');
+  assert.equal(failed.status, 1);
+  assert.deepEqual(failed.json.missing, ['class-variance-authority']);
+  assert.equal(failed.json.install, 'npm i class-variance-authority');
+  assert.equal(fs.existsSync(path.join(bare, 'components')), false);
+
+  const root = makeRepo({
+    deps: { 'class-variance-authority': '^0.7' },
+    files: { 'components.json': JSON.stringify({ aliases: { utils: '@/lib/utils', ui: '@/components/ui' } }) },
+  });
+  const { status, json } = run(root, 'react', 'component', '--name', 'Badge', '--element', 'span', '--variants');
+  assert.equal(status, 0, JSON.stringify(json));
+  const src = read(root, 'components/badge/badge.tsx');
+  assert.match(src, /import \{ cva, type VariantProps \} from 'class-variance-authority';/);
+  assert.match(src, /import \{ cn \} from '@\/lib\/utils';/);
+  assert.match(src, /export const badgeVariants = cva\(/);
+  assert.match(src, /defaultVariants: \{ variant: 'default', size: 'default' \}/);
+  assert.match(src, /ComponentProps<'span'> & VariantProps<typeof badgeVariants> & \{/);
+  assert.match(src, /className=\{cn\(badgeVariants\(\{ variant, size \}\), className\)\}/);
+  assert.match(read(root, 'components/badge/index.ts'), /export \{ Badge, badgeVariants \} from '\.\/badge';/);
+});
+
+test('--as-child uses the installed Radix Slot and keeps type off the child', () => {
+  const root = makeRepo({ deps: { 'radix-ui': '^1' } });
+  const { status, json } = run(root, 'next', 'client-component', '--name', 'Action', '--element', 'button', '--as-child');
+  assert.equal(status, 0, JSON.stringify(json));
+  const src = read(root, 'components/action/action.tsx');
+  assert.match(src, /^'use client';/);
+  assert.match(src, /import \{ Slot \} from 'radix-ui';/);
+  assert.match(src, /const Comp = asChild \? Slot\.Root : 'button';/);
+  assert.match(src, /<Comp className=\{className\} type=\{asChild \? undefined : type\} \{\.\.\.props\}>/);
+  assert.match(src, /<\/Comp>/);
+  assert.deepEqual(run(makeRepo(), 'react', 'component', '--name', 'X', '--element', 'a', '--as-child').json.missing, ['@radix-ui/react-slot']);
+});
+
+test('every element × variants × as-child × cn combination renders consistent TSX', () => {
+  const pack = JSON.parse(fs.readFileSync(path.join(skillDir, 'packs/react/pack.json'), 'utf8'));
+  const deps = { 'class-variance-authority': '^0.7', '@radix-ui/react-slot': '^1' };
+  const roots = [makeRepo({ deps }), makeRepo({ deps, files: { 'lib/utils.ts': 'export function cn() {}' } })];
+  for (const root of roots) {
+    for (const element of pack.generators.component.options.element.choices) {
+      for (const variants of [false, true]) {
+        for (const asChild of [false, true]) {
+          const options = { name: `x-${element}`, element, ...(variants && { variants: true }), ...(asChild && { 'as-child': true }) };
+          const [main, index] = plan({ skillDir, root, pack: 'react', generator: 'component', options }).files;
+          const src = main.content;
+          const label = `${element} variants=${variants} asChild=${asChild}`;
+          const tag = asChild ? 'Comp' : element;
+          assert.doesNotMatch(src, /\{\{/, label);
+          assert.match(src, new RegExp(`<${tag} className=`), label);
+          assert.match(src, new RegExp(`</${tag}>`), label);
+          assert.equal(/const Comp = /.test(src), asChild, label);
+          assert.equal(/ type=\{/.test(src), element === 'button', label);
+          assert.equal(/Variants = cva\(/.test(src), variants, label);
+          assert.equal(/Variants \}/.test(index.content), variants, label);
+        }
+      }
+    }
+  }
+});
+
+test('the element allowlist is identical across every component generator', () => {
+  const choices = (pack, gen) =>
+    JSON.parse(fs.readFileSync(path.join(skillDir, `packs/${pack}/pack.json`), 'utf8')).generators[gen].options.element.choices;
+  const expected = 'div span section article aside nav header footer main ul ol li button a form label p h1 h2 h3 h4 h5 h6'.split(' ');
+  assert.deepEqual(choices('react', 'component'), expected);
+  assert.deepEqual(choices('next', 'component'), expected);
+  assert.deepEqual(choices('next', 'client-component'), expected);
+});
+
+test('a 0.1.0-era component.tsx override still generates', () => {
+  const override = 'export function {{name.pascal}}() { return null; }\n';
+  const root = makeRepo({ files: { '.codegen/templates/react/component/component.tsx.tpl': override } });
+  const { status, json } = run(root, 'react', 'component', '--name', 'Old', '--element', 'div');
+  assert.equal(status, 0, JSON.stringify(json));
+  assert.deepEqual(json.overridden, ['components/old/old.tsx']);
+  assert.equal(read(root, 'components/old/old.tsx'), 'export function Old() { return null; }\n');
 });

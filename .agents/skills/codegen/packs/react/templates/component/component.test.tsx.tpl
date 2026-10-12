@@ -7,7 +7,7 @@ import { {{name.pascal}} } from './{{name.kebab}}';
 
 describe('{{name.pascal}}', () => {
   it('renders its children', () => {
-    render(<{{name.pascal}}>content</{{name.pascal}}>);
+    render(<{{name.pascal}}{{el.testProps}}>content</{{name.pascal}}>);
     expect(screen.getByText('content')).toBeTruthy();
   });
 

@@ -6,7 +6,10 @@
       "description": "Server Component (default choice) in its own kebab-case folder with an index barrel.",
       "out": "components",
       "options": {
-        "cn": { "type": "string", "description": "Import path of the repo's cn() helper, e.g. @/lib/utils. Omit if the repo has none." },
+        "element": { "type": "string", "required": true, "choices": ["div", "span", "section", "article", "aside", "nav", "header", "footer", "main", "ul", "ol", "li", "button", "a", "form", "label", "p", "h1", "h2", "h3", "h4", "h5", "h6"], "description": "Semantic root element. Pick the most meaningful one (button for actions, a for navigation, nav/section/article for regions); div only when nothing else fits." },
+        "variants": { "type": "boolean", "requires": ["class-variance-authority"], "description": "Add cva variant/size props (shadcn style) and export <name>Variants." },
+        "as-child": { "type": "boolean", "requires": ["@radix-ui/react-slot|radix-ui"], "description": "Add asChild (Radix Slot) so callers can render it as their own element, e.g. a link." },
+        "cn": { "type": "string", "description": "Import path of the repo's cn() helper. Auto-detected from components.json or lib/utils; pass only to override." },
         "with-test": { "type": "boolean", "description": "Add a Testing Library test (sync components only)." },
         "with-story": { "type": "boolean", "description": "Add a Storybook CSF3 story (requires .storybook/)." }
       },
@@ -22,7 +25,10 @@
       "out": "components",
       "vars": { "client": true, "server": false },
       "options": {
-        "cn": { "type": "string", "description": "Import path of the repo's cn() helper, e.g. @/lib/utils. Omit if the repo has none." },
+        "element": { "type": "string", "required": true, "choices": ["div", "span", "section", "article", "aside", "nav", "header", "footer", "main", "ul", "ol", "li", "button", "a", "form", "label", "p", "h1", "h2", "h3", "h4", "h5", "h6"], "description": "Semantic root element. Pick the most meaningful one (button for actions, a for navigation, nav/section/article for regions); div only when nothing else fits." },
+        "variants": { "type": "boolean", "requires": ["class-variance-authority"], "description": "Add cva variant/size props (shadcn style) and export <name>Variants." },
+        "as-child": { "type": "boolean", "requires": ["@radix-ui/react-slot|radix-ui"], "description": "Add asChild (Radix Slot) so callers can render it as their own element, e.g. a link." },
+        "cn": { "type": "string", "description": "Import path of the repo's cn() helper. Auto-detected from components.json or lib/utils; pass only to override." },
         "with-test": { "type": "boolean", "description": "Add a Testing Library test." },
         "with-story": { "type": "boolean", "description": "Add a Storybook CSF3 story (requires .storybook/)." }
       },
