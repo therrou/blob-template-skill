@@ -3,6 +3,7 @@ import path from 'node:path';
 
 import { CodegenError } from './errors.mjs';
 import { detectMajor, detectStorybook, detectTestRunner, readPackageJson, resolveOut } from './detect.mjs';
+import { installCommand, missingDependencies } from './deps.mjs';
 import { parseName } from './names.mjs';
 import { parseRoute } from './route.mjs';
 import { findTodos, render } from './template.mjs';
@@ -49,6 +50,13 @@ function resolveTemplate(skillDir, root, pack, ref) {
   return { file: path.join(skillDir, 'packs', owner, 'templates', rel), overridden: false };
 }
 
+function requiredPackages(gen, ctx) {
+  const fromOptions = Object.entries(gen.options ?? {})
+    .filter(([key]) => ctx[camel(key)])
+    .flatMap(([, spec]) => spec.requires ?? []);
+  return [...(gen.requires ?? []), ...fromOptions];
+}
+
 export function plan({ skillDir, root, pack, generator, options }) {
   const manifest = loadPack(skillDir, pack);
   const gen = manifest.generators[generator];
@@ -64,11 +72,27 @@ export function plan({ skillDir, root, pack, generator, options }) {
     }
   }
   if (typeof options.name !== 'string' || !options.name) throw new CodegenError('Missing required --name.');
+  for (const [key, spec] of Object.entries(gen.options ?? {})) {
+    const value = options[key];
+    if (value === undefined) {
+      if (spec.required) {
+        throw new CodegenError(`Missing required --${key}${spec.choices ? ` (one of: ${spec.choices.join(', ')})` : ''}.`);
+      }
+      continue;
+    }
+    if (spec.type === 'string' && typeof value !== 'string') throw new CodegenError(`--${key} needs a value.`);
+    if (spec.choices && !spec.choices.includes(value)) {
+      throw new CodegenError(`--${key} must be one of: ${spec.choices.join(', ')}. Got "${value}".`);
+    }
+  }
 
   const pkg = readPackageJson(root);
   const ctx = { ...manifest.vars, ...gen.vars };
   for (const [key, spec] of Object.entries(gen.options ?? {})) {
     ctx[camel(key)] = options[key] ?? (spec.type === 'boolean' ? false : '');
+  }
+  for (const [key, spec] of Object.entries(gen.options ?? {})) {
+    if (spec.choices) ctx[`${camel(key)}Is`] = Object.fromEntries(spec.choices.map((c) => [c, ctx[camel(key)] === c]));
   }
 
   if (gen.nameKind === 'route') {
@@ -76,6 +100,14 @@ export function plan({ skillDir, root, pack, generator, options }) {
     Object.assign(ctx, route, { name });
   } else {
     ctx.name = parseName(options.name, gen.strip);
+  }
+
+  const missing = missingDependencies(pkg, requiredPackages(gen, ctx));
+  if (missing.length) {
+    throw new CodegenError(
+      `Missing requirements for ${pack}/${generator}: ${missing.join(', ')}. Ask the user before installing, then rerun.`,
+      { missing, install: installCommand(root, missing) },
+    );
   }
 
   ctx.vitest = false;

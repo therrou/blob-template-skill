@@ -9,7 +9,7 @@ export function readPackageJson(root) {
   }
 }
 
-function allDeps(pkg) {
+export function allDeps(pkg) {
   return { ...pkg?.peerDependencies, ...pkg?.devDependencies, ...pkg?.dependencies };
 }
 

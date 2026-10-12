@@ -1,38 +1,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
-import { spawnSync } from 'node:child_process';
-import { fileURLToPath } from 'node:url';
 
-const here = path.dirname(fileURLToPath(import.meta.url));
-const skillDir = path.join(here, '..', '.agents', 'skills', 'codegen');
-const cli = path.join(skillDir, 'scripts', 'generate.mjs');
-
-function makeRepo({ deps = {}, dirs = [], files = {} } = {}) {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'codegen-'));
-  fs.writeFileSync(path.join(root, 'package.json'), JSON.stringify({ devDependencies: deps }));
-  for (const d of dirs) fs.mkdirSync(path.join(root, d), { recursive: true });
-  for (const [p, c] of Object.entries(files)) {
-    fs.mkdirSync(path.dirname(path.join(root, p)), { recursive: true });
-    fs.writeFileSync(path.join(root, p), c);
-  }
-  return root;
-}
-
-function run(root, ...args) {
-  const r = spawnSync(process.execPath, [cli, ...args], { cwd: root, encoding: 'utf8' });
-  let json;
-  try {
-    json = JSON.parse(r.stdout);
-  } catch {
-    throw new Error(`Non-JSON output (exit ${r.status}):\n${r.stdout}\n${r.stderr}`);
-  }
-  return { status: r.status, json };
-}
-
-const read = (root, p) => fs.readFileSync(path.join(root, p), 'utf8');
+import { makeRepo, read, run } from './helpers.mjs';
 
 test('react component: kebab folder under src/, named export, cn import, no test by default', () => {
   const root = makeRepo({ deps: { vitest: '^2' }, dirs: ['src'] });
