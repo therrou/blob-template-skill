@@ -81,3 +81,48 @@ test('parseRoute rejects invalid segments and traversal', () => {
     assert.throws(() => parseRoute(raw), /Invalid route/, raw);
   }
 });
+
+import { elementVars } from '../.agents/skills/codegen/scripts/lib/elements.mjs';
+
+const nameOf = { camel: 'badge' };
+
+test('elementVars: plain div with cn', () => {
+  const el = elementVars({ element: 'div', name: nameOf, variants: false, asChild: false, cn: '@/lib/utils' });
+  assert.equal(el.tag, 'div');
+  assert.equal(el.propsType, "ComponentProps<'div'>");
+  assert.equal(el.params, 'className, children, ...props');
+  assert.equal(el.classNameAttr, "className={cn('', className)}");
+  assert.equal(el.typeAttr, '');
+  assert.match(el.a11yNote, /interactive/);
+});
+
+test('elementVars: button defaults type, and keeps it off Slot children', () => {
+  const plain = elementVars({ element: 'button', name: nameOf, variants: false, asChild: false, cn: '' });
+  assert.equal(plain.params, "className, type = 'button', children, ...props");
+  assert.equal(plain.typeAttr, ' type={type}');
+  assert.equal(plain.classNameAttr, 'className={className}');
+  const slotted = elementVars({ element: 'button', name: nameOf, variants: false, asChild: true, cn: '' });
+  assert.equal(slotted.tag, 'Comp');
+  assert.equal(slotted.typeAttr, ' type={asChild ? undefined : type}');
+  assert.equal(slotted.params, "className, asChild = false, type = 'button', children, ...props");
+  assert.equal(slotted.propsType, "ComponentProps<'button'> & { asChild?: boolean }");
+});
+
+test('elementVars: anchors require href; variants go through cva', () => {
+  const el = elementVars({ element: 'a', name: nameOf, variants: true, asChild: false, cn: '@/lib/utils' });
+  assert.equal(el.propsType, "Omit<ComponentProps<'a'>, 'href'> & { href: string } & VariantProps<typeof badgeVariants>");
+  assert.equal(el.params, 'className, variant, size, children, ...props');
+  assert.equal(el.classNameAttr, 'className={cn(badgeVariants({ variant, size }), className)}');
+  assert.equal(el.testProps, ' href="/"');
+  const noCn = elementVars({ element: 'span', name: nameOf, variants: true, asChild: false, cn: '' });
+  assert.equal(noCn.classNameAttr, 'className={badgeVariants({ variant, size, className })}');
+});
+
+test('elementVars: notes for landmarks and headings, none for article', () => {
+  const note = (element) => elementVars({ element, name: nameOf, variants: false, asChild: false, cn: '' }).a11yNote;
+  assert.match(note('nav'), /aria-label/);
+  assert.match(note('section'), /aria-labelledby/);
+  assert.match(note('h2'), /heading levels/);
+  assert.match(note('ul'), /li children/);
+  assert.equal(note('article'), '');
+});
