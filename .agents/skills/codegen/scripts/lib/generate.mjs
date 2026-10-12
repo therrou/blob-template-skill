@@ -2,7 +2,17 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 import { CodegenError } from './errors.mjs';
-import { detectMajor, detectStorybook, detectTestRunner, readPackageJson, resolveOut } from './detect.mjs';
+import {
+  detectCn,
+  detectMajor,
+  detectShadcnAliases,
+  detectSlot,
+  detectStorybook,
+  detectTestRunner,
+  readPackageJson,
+  resolveAliasDir,
+  resolveOut,
+} from './detect.mjs';
 import { installCommand, missingDependencies } from './deps.mjs';
 import { parseName } from './names.mjs';
 import { parseRoute } from './route.mjs';
@@ -102,11 +112,24 @@ export function plan({ skillDir, root, pack, generator, options }) {
     ctx.name = parseName(options.name, gen.strip);
   }
 
+  if ('cn' in (gen.options ?? {}) && !ctx.cn) ctx.cn = detectCn(root) ?? '';
+  ctx.ui = detectShadcnAliases(root).ui ?? '@/components/ui';
+  ctx.slot = detectSlot(pkg) ?? { import: '', component: '' };
+
   const missing = missingDependencies(pkg, requiredPackages(gen, ctx));
-  if (missing.length) {
+  const uiDir = resolveAliasDir(root, ctx.ui);
+  const missingUi = (gen.requiresUi ?? [])
+    .map((ref) => render(ref, ctx, `requiresUi of ${generator}`))
+    .filter((ui) => !['tsx', 'jsx'].some((ext) => fs.existsSync(path.join(root, uiDir, `${ui}.${ext}`))));
+  if (missing.length || missingUi.length) {
+    const install = [
+      missing.length && installCommand(root, missing),
+      missingUi.length && `npx shadcn@latest add ${missingUi.join(' ')}`,
+    ].filter(Boolean).join(' && ');
+    const names = [...missing, ...missingUi.map((ui) => `${ctx.ui}/${ui}`)];
     throw new CodegenError(
-      `Missing requirements for ${pack}/${generator}: ${missing.join(', ')}. Ask the user before installing, then rerun.`,
-      { missing, install: installCommand(root, missing) },
+      `Missing requirements for ${pack}/${generator}: ${names.join(', ')}. Ask the user before installing, then rerun.`,
+      { missing, missingUi, install },
     );
   }
 

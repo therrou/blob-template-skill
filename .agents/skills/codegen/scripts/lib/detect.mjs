@@ -46,3 +46,40 @@ export function resolveOut(root, out) {
   if (isDir(withSrc)) return withSrc;
   return isDir('src') ? withSrc : out;
 }
+
+// shadcn's components.json is the source of truth for import aliases.
+export function detectShadcnAliases(root) {
+  try {
+    const { aliases = {} } = JSON.parse(fs.readFileSync(path.join(root, 'components.json'), 'utf8'));
+    return { utils: aliases.utils ?? null, ui: aliases.ui ?? null };
+  } catch {
+    return { utils: null, ui: null };
+  }
+}
+
+const CN_EXPORT = /export\s+(?:function\s+cn\b|const\s+cn\s*=)/;
+
+// Without components.json, look for cn() where shadcn puts it and assume the default @/ alias.
+export function detectCn(root) {
+  const { utils } = detectShadcnAliases(root);
+  if (utils) return utils;
+  for (const dir of ['lib', 'src/lib']) {
+    for (const ext of ['ts', 'tsx', 'js']) {
+      const file = path.join(root, dir, `utils.${ext}`);
+      if (fs.existsSync(file) && CN_EXPORT.test(fs.readFileSync(file, 'utf8'))) return '@/lib/utils';
+    }
+  }
+  return null;
+}
+
+export function detectSlot(pkg) {
+  const deps = allDeps(pkg);
+  if (deps['@radix-ui/react-slot']) return { import: '@radix-ui/react-slot', component: 'Slot' };
+  if (deps['radix-ui']) return { import: 'radix-ui', component: 'Slot.Root' };
+  return null;
+}
+
+// '@/components/ui' -> 'components/ui' or 'src/components/ui', following the repo's src/ convention.
+export function resolveAliasDir(root, alias) {
+  return resolveOut(root, alias.replace(/^[@~]\//, '')).split(path.sep).join('/');
+}
