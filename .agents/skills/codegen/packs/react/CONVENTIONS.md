@@ -7,6 +7,7 @@ These are the defaults behind the templates. They apply to every React-based pac
 | Kind | Location | File | Export |
 |---|---|---|---|
 | Component | `components/<kebab>/` | `<kebab>.tsx` + `index.ts` | `export function PascalCase` |
+| Form field | `components/<kebab>/` | `<kebab>.tsx` + `index.ts` | `export function PascalCase` |
 | Hook | `hooks/` | `use-<kebab>.ts` | `export function useThing` |
 | Context | `contexts/` | `<kebab>-context.tsx` | `ThingProvider`, `useThing` |
 | Util | `utils/` (react), `lib/` (next) | `<kebab>.ts` | `export function camelCase` |
@@ -19,11 +20,21 @@ These are the defaults behind the templates. They apply to every React-based pac
 
 ## Components
 
-- Type props with `type XProps = ComponentProps<'div'> & { ... }`, and forward `className` and `...props`. Don't use `React.FC`.
-- One component per file. Sub-parts that are only used here go in the same folder.
+- Type props with `type XProps = ComponentProps<'el'> & { ... }`, and forward `className` and `...props`. Don't use `React.FC`.
+- **The root element is a decision, not a default.** Pick the semantic element (`--element`): `button` for actions (with `type="button"` unless it submits), `a` for navigation (`href` is required), `nav`/`section`/`article`/`aside`/`header`/`footer` for regions, `ul`/`ol` + `li` for lists, `h1`–`h6` for headings. `div`/`span` are for layout only and never get `onClick`.
+- Name landmarks when a page has more than one of a kind (`aria-label` on `nav`, `aria-labelledby` on `section`). Icon-only buttons need `aria-label`.
+- **Variants** use `cva` (`--variants`): a `variant` and a `size` key with semantic-token classes, `defaultVariants`, `VariantProps` in the props type, and `<name>Variants` exported for reuse (e.g. styling a link like the component).
+- **Polymorphism** uses `asChild` with Radix `Slot` (`--as-child`), never an `as` prop.
+- One component per file. Sub-parts that are only used here go in the same folder. No compound components (`Card.Header`); export separate components instead.
 - Compose existing primitives (`components/ui/*`, the design-system package) before writing raw HTML.
 - Keep components presentational. Data fetching belongs in pages, loaders or hooks.
-- Accessibility: use semantic elements first (`button`, `nav`, `main`, `ul`), label every control, and never put `onClick` on a `div`.
+
+## Forms
+
+- react-hook-form + zod: the schema lives with the form (`zodResolver(schema)`), never inside fields.
+- Each field is a `form-field` component on the shadcn form primitives (`FormField`, `FormItem`, `FormLabel`, `FormControl`, `FormDescription`, `FormMessage`), which wire `id`, `aria-describedby` and `aria-invalid`. Don't hand-wire them.
+- Fields read `control` from `useFormContext()`, so render them inside `<Form {...form}>`. Pass the form values type for a typed `name`: `<EmailField<SignupValues> name="email" label="Email" />`.
+- Set `type` and `autoComplete` on text inputs.
 
 ## Hooks
 

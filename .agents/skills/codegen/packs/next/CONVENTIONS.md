@@ -8,6 +8,7 @@ Read `../react/CONVENTIONS.md` first. Everything in it applies here. These are t
 - Put `'use client'` on the **smallest leaf** that needs it, never on a page or layout. Pass server-fetched data down as plain, serializable props.
 - Server-only code (secrets, DB, server SDKs) lives in `lib/` with `import 'server-only'` (`util --server-only`).
 - Hooks and context are client-only. The generator marks them accordingly.
+- Form fields are Client Components (the generator marks them). Keep the form itself a small client leaf and submit to a Server Action.
 
 ## Routes (`app/`)
 

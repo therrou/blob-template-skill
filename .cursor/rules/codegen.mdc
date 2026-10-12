@@ -1,5 +1,5 @@
 ---
-description: Scaffolding React/Next.js components, hooks, contexts, utils, pages, routes, API routes and server actions
+description: Scaffolding React/Next.js components, form fields, hooks, contexts, utils, pages, routes, API routes and server actions
 alwaysApply: false
 ---
 
