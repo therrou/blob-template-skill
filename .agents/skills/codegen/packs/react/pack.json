@@ -1,0 +1,63 @@
+{
+  "description": "Client-side React (Vite/CRA-style SPA) with TypeScript and Tailwind.",
+  "vars": { "client": false, "server": false, "serverOnly": false },
+  "generators": {
+    "component": {
+      "description": "Presentational component in its own kebab-case folder with an index barrel.",
+      "out": "components",
+      "options": {
+        "cn": { "type": "string", "description": "Import path of the repo's cn() helper, e.g. @/lib/utils. Omit if the repo has none." },
+        "with-test": { "type": "boolean", "description": "Add a Testing Library test." },
+        "with-story": { "type": "boolean", "description": "Add a Storybook CSF3 story (requires .storybook/)." }
+      },
+      "files": [
+        { "template": "component/component.tsx.tpl", "path": "{{name.kebab}}/{{name.kebab}}.tsx" },
+        { "template": "component/index.ts.tpl", "path": "{{name.kebab}}/index.ts" },
+        { "template": "component/component.test.tsx.tpl", "path": "{{name.kebab}}/{{name.kebab}}.test.tsx", "when": "withTest" },
+        { "template": "component/component.stories.tsx.tpl", "path": "{{name.kebab}}/{{name.kebab}}.stories.tsx", "when": "withStory" }
+      ]
+    },
+    "hook": {
+      "description": "Custom hook (use-thing.ts). Pass the name with or without the use prefix.",
+      "out": "hooks",
+      "strip": ["use"],
+      "options": {
+        "with-test": { "type": "boolean", "description": "Add a renderHook test." }
+      },
+      "files": [
+        { "template": "hook/hook.ts.tpl", "path": "use-{{name.kebab}}.ts" },
+        { "template": "hook/hook.test.ts.tpl", "path": "use-{{name.kebab}}.test.ts", "when": "withTest" }
+      ]
+    },
+    "context": {
+      "description": "Context + Provider + guarded useThing() hook in one file.",
+      "out": "contexts",
+      "strip": ["context", "provider"],
+      "options": {},
+      "files": [{ "template": "context/context.tsx.tpl", "path": "{{name.kebab}}-context.tsx" }]
+    },
+    "util": {
+      "description": "Pure utility function in its own kebab-case file.",
+      "out": "utils",
+      "options": {
+        "with-test": { "type": "boolean", "description": "Add a unit test." }
+      },
+      "files": [
+        { "template": "util/util.ts.tpl", "path": "{{name.kebab}}.ts" },
+        { "template": "util/util.test.ts.tpl", "path": "{{name.kebab}}.test.ts", "when": "withTest" }
+      ]
+    },
+    "page": {
+      "description": "Route-level page component for a client-side router (register it in the router yourself).",
+      "out": "pages",
+      "strip": ["page"],
+      "options": {
+        "with-test": { "type": "boolean", "description": "Add a Testing Library test." }
+      },
+      "files": [
+        { "template": "page/page.tsx.tpl", "path": "{{name.kebab}}-page.tsx" },
+        { "template": "page/page.test.tsx.tpl", "path": "{{name.kebab}}-page.test.tsx", "when": "withTest" }
+      ]
+    }
+  }
+}

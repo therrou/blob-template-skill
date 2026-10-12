@@ -1,0 +1,6 @@
+---
+description: Scaffolding React/Next.js components, hooks, contexts, utils, pages, routes, API routes and server actions
+alwaysApply: false
+---
+
+Read and follow `.agents/skills/codegen/SKILL.md` before creating any of these files. Scaffold with its generator instead of writing boilerplate by hand.

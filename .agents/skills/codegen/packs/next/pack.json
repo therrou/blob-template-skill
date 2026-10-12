@@ -1,0 +1,105 @@
+{
+  "description": "Next.js App Router, Server Components first, TypeScript and Tailwind.",
+  "vars": { "client": false, "server": true, "serverOnly": false },
+  "generators": {
+    "component": {
+      "description": "Server Component (default choice) in its own kebab-case folder with an index barrel.",
+      "out": "components",
+      "options": {
+        "cn": { "type": "string", "description": "Import path of the repo's cn() helper, e.g. @/lib/utils. Omit if the repo has none." },
+        "with-test": { "type": "boolean", "description": "Add a Testing Library test (sync components only)." },
+        "with-story": { "type": "boolean", "description": "Add a Storybook CSF3 story (requires .storybook/)." }
+      },
+      "files": [
+        { "template": "@react/component/component.tsx.tpl", "path": "{{name.kebab}}/{{name.kebab}}.tsx" },
+        { "template": "@react/component/index.ts.tpl", "path": "{{name.kebab}}/index.ts" },
+        { "template": "@react/component/component.test.tsx.tpl", "path": "{{name.kebab}}/{{name.kebab}}.test.tsx", "when": "withTest" },
+        { "template": "@react/component/component.stories.tsx.tpl", "path": "{{name.kebab}}/{{name.kebab}}.stories.tsx", "when": "withStory" }
+      ]
+    },
+    "client-component": {
+      "description": "Client Component ('use client') for state, effects, event handlers or browser APIs. Keep it a small leaf.",
+      "out": "components",
+      "vars": { "client": true, "server": false },
+      "options": {
+        "cn": { "type": "string", "description": "Import path of the repo's cn() helper, e.g. @/lib/utils. Omit if the repo has none." },
+        "with-test": { "type": "boolean", "description": "Add a Testing Library test." },
+        "with-story": { "type": "boolean", "description": "Add a Storybook CSF3 story (requires .storybook/)." }
+      },
+      "files": [
+        { "template": "@react/component/component.tsx.tpl", "path": "{{name.kebab}}/{{name.kebab}}.tsx" },
+        { "template": "@react/component/index.ts.tpl", "path": "{{name.kebab}}/index.ts" },
+        { "template": "@react/component/component.test.tsx.tpl", "path": "{{name.kebab}}/{{name.kebab}}.test.tsx", "when": "withTest" },
+        { "template": "@react/component/component.stories.tsx.tpl", "path": "{{name.kebab}}/{{name.kebab}}.stories.tsx", "when": "withStory" }
+      ]
+    },
+    "hook": {
+      "description": "Custom hook for Client Components (use-thing.ts).",
+      "out": "hooks",
+      "strip": ["use"],
+      "vars": { "client": true },
+      "options": {
+        "with-test": { "type": "boolean", "description": "Add a renderHook test." }
+      },
+      "files": [
+        { "template": "@react/hook/hook.ts.tpl", "path": "use-{{name.kebab}}.ts" },
+        { "template": "@react/hook/hook.test.ts.tpl", "path": "use-{{name.kebab}}.test.ts", "when": "withTest" }
+      ]
+    },
+    "context": {
+      "description": "Client context + Provider + guarded useThing() hook. Mount the provider as deep in the tree as possible.",
+      "out": "contexts",
+      "strip": ["context", "provider"],
+      "vars": { "client": true },
+      "options": {},
+      "files": [{ "template": "@react/context/context.tsx.tpl", "path": "{{name.kebab}}-context.tsx" }]
+    },
+    "util": {
+      "description": "Pure utility function in lib/. Use --server-only for code that must never reach the client bundle.",
+      "out": "lib",
+      "options": {
+        "server-only": { "type": "boolean", "description": "Add import 'server-only' (secrets, DB, server SDKs)." },
+        "with-test": { "type": "boolean", "description": "Add a unit test." }
+      },
+      "files": [
+        { "template": "@react/util/util.ts.tpl", "path": "{{name.kebab}}.ts" },
+        { "template": "@react/util/util.test.ts.tpl", "path": "{{name.kebab}}.test.ts", "when": "withTest" }
+      ]
+    },
+    "route": {
+      "description": "App Router segment: page.tsx plus optional layout/loading/error. --name is the route path, e.g. blog/[slug] or (marketing)/about.",
+      "out": "app",
+      "nameKind": "route",
+      "options": {
+        "with-layout": { "type": "boolean", "description": "Add layout.tsx." },
+        "with-loading": { "type": "boolean", "description": "Add loading.tsx (Suspense fallback for the segment)." },
+        "with-error": { "type": "boolean", "description": "Add error.tsx (client error boundary)." }
+      },
+      "files": [
+        { "template": "route/page.tsx.tpl", "path": "{{route}}/page.tsx" },
+        { "template": "route/layout.tsx.tpl", "path": "{{route}}/layout.tsx", "when": "withLayout" },
+        { "template": "route/loading.tsx.tpl", "path": "{{route}}/loading.tsx", "when": "withLoading" },
+        { "template": "route/error.tsx.tpl", "path": "{{route}}/error.tsx", "when": "withError" }
+      ]
+    },
+    "api-route": {
+      "description": "Route Handler (route.ts) under app/api. --name is the path below /api, e.g. users/[id].",
+      "out": "app/api",
+      "nameKind": "route",
+      "options": {
+        "with-test": { "type": "boolean", "description": "Add a handler test that calls GET with a Request." }
+      },
+      "files": [
+        { "template": "api-route/route.ts.tpl", "path": "{{route}}/route.ts" },
+        { "template": "api-route/route.test.ts.tpl", "path": "{{route}}/route.test.ts", "when": "withTest" }
+      ]
+    },
+    "server-action": {
+      "description": "Server Action module ('use server') for mutations called from forms or client components.",
+      "out": "actions",
+      "strip": ["action"],
+      "options": {},
+      "files": [{ "template": "server-action/action.ts.tpl", "path": "{{name.kebab}}.ts" }]
+    }
+  }
+}
