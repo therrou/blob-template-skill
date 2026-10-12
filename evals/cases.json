@@ -1,0 +1,51 @@
+[
+  {
+    "id": "badge-variants",
+    "prompt": "Create a Badge component with success, warning and neutral variants in sm and md sizes.",
+    "generator": "component|client-component",
+    "newFiles": ["^components/[a-z-]*badge[a-z-]*/[a-z-]*badge[a-z-]*\\.tsx$"],
+    "contains": [{ "file": "badge[a-z-]*\\.tsx$", "pattern": "cva\\(" }],
+    "dryRun": ["next", "component", "--name", "Badge", "--element", "span", "--variants"]
+  },
+  {
+    "id": "reuse-button",
+    "prompt": "I need a Button component with primary and outline styles for the settings page.",
+    "noGenerator": true,
+    "noNewFiles": "^components/(?!ui/)",
+    "dryRun": ["next", "component", "--name", "Button", "--element", "button", "--variants"]
+  },
+  {
+    "id": "newsletter-email-field",
+    "prompt": "Add an email field component for the newsletter signup form.",
+    "generator": "form-field",
+    "newFiles": ["^components/[a-z-]*email[a-z-]*/"],
+    "contains": [{ "file": "email[a-z-]*\\.tsx$", "pattern": "FormField" }],
+    "dryRun": ["next", "form-field", "--name", "EmailField", "--control", "input"]
+  },
+  {
+    "id": "footer-nav",
+    "prompt": "Create a FooterNav component that renders the footer links it receives as props.",
+    "generator": "component|client-component",
+    "newFiles": ["^components/footer-nav/footer-nav\\.tsx$"],
+    "contains": [
+      { "file": "footer-nav\\.tsx$", "pattern": "<nav\\b" },
+      { "file": "footer-nav\\.tsx$", "pattern": "aria-label" }
+    ],
+    "dryRun": ["next", "component", "--name", "FooterNav", "--element", "nav"]
+  },
+  {
+    "id": "debounce-hook",
+    "prompt": "Add a hook that debounces a value.",
+    "generator": "hook",
+    "newFiles": ["^hooks/use-[a-z-]*debounce[a-z-]*\\.ts$"],
+    "dryRun": ["next", "hook", "--name", "useDebouncedValue"]
+  },
+  {
+    "id": "pricing-route",
+    "prompt": "Add a /pricing page.",
+    "generator": "route",
+    "newFiles": ["^app/pricing/page\\.tsx$"],
+    "contains": [{ "file": "^app/pricing/page\\.tsx$", "pattern": "'use client'", "absent": true }],
+    "dryRun": ["next", "route", "--name", "pricing"]
+  }
+]
