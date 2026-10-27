@@ -40,7 +40,12 @@ export async function runActions(actions, { root, outDir, ctx, renderPath, rende
   const planned = new Map();
   const skipped = [];
   const rel = (abs) => ensureInside(root, abs);
-  const read = (abs) => (planned.has(abs) ? planned.get(abs).content : fs.existsSync(abs) ? fs.readFileSync(abs, 'utf8') : null);
+  const read = (abs, action) => {
+    if (planned.has(abs)) return planned.get(abs).content;
+    if (!fs.existsSync(abs)) return null;
+    if (!fs.statSync(abs).isFile()) throw new CodegenError(`${action?.type ?? 'custom'}: ${rel(abs)} is not a file.`);
+    return fs.readFileSync(abs, 'utf8');
+  };
   const touch = (abs, action, content, { overridden = false, text } = {}) => {
     const entry = planned.get(abs) ?? (fs.existsSync(abs) ? { kind: 'modify', before: fs.readFileSync(abs, 'utf8') } : { kind: 'create' });
     planned.set(abs, {
@@ -54,7 +59,7 @@ export async function runActions(actions, { root, outDir, ctx, renderPath, rende
     });
   };
   const existing = (abs, action) => {
-    const content = read(abs);
+    const content = read(abs, action);
     if (content !== null) return content;
     if (action.skipIfMissing) {
       skipped.push({ path: rel(abs), action: action.type, reason: 'missing' });
@@ -65,7 +70,7 @@ export async function runActions(actions, { root, outDir, ctx, renderPath, rende
 
   const add = (action) => {
     const abs = resolveTarget(root, outDir, renderPath(action));
-    if (action.skipIfExists && read(abs) !== null) {
+    if (action.skipIfExists && read(abs, action) !== null) {
       skipped.push({ path: rel(abs), action: action.type, reason: 'exists' });
       return;
     }
@@ -104,7 +109,8 @@ export async function runActions(actions, { root, outDir, ctx, renderPath, rende
         const regex = compile(action);
         if (!regex.test(content)) throw new CodegenError(`modify: pattern /${action.pattern}/ not found in ${rel(abs)}.`);
         const rendered = renderText(action);
-        touch(abs, action, content.replace(regex, rendered.content), { overridden: rendered.overridden, text: rendered.content });
+        const match = regex.exec(content);
+        touch(abs, action, content.replace(regex, rendered.content), { overridden: rendered.overridden, text: match[0].replace(regex, rendered.content) });
         break;
       }
       case 'append': {

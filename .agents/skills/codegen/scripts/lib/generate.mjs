@@ -252,7 +252,7 @@ export async function plan({ skillDir, root, pack, generator, options }) {
 
 // All-or-nothing: refuse if any create target exists or a modified file changed since planning;
 // on a mid-write failure, remove what was created and restore what was modified.
-export function write(files) {
+export function checkWritable(files) {
   const conflicts = files.filter((f) => f.kind === 'create' && fs.existsSync(f.abs)).map((f) => f.path);
   if (conflicts.length) {
     throw new CodegenError('Target files already exist; nothing was written. Reuse/extend them or pick another name.', {
@@ -264,6 +264,10 @@ export function write(files) {
       throw new CodegenError(`${f.path} changed while generating; nothing was written.`);
     }
   }
+}
+
+export function write(files) {
+  checkWritable(files);
   const done = [];
   const createdDirs = [];
   try {

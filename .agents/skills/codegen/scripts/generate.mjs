@@ -7,7 +7,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { CodegenError } from './lib/errors.mjs';
-import { GLOBAL_OPTIONS, listPacks, loadPack, plan, write } from './lib/generate.mjs';
+import { GLOBAL_OPTIONS, checkWritable, listPacks, loadPack, plan, write } from './lib/generate.mjs';
 
 const skillDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -67,6 +67,7 @@ async function main() {
   const summary = { created, modified, skipped: result.skipped, overridden, todo: result.todo };
 
   if (genOptions['dry-run']) {
+    checkWritable(result.files);
     const changes = result.files.filter((f) => f.kind === 'modify').map((f) => ({ path: f.path, action: f.action, text: f.text ?? '' }));
     return print({ ok: true, dryRun: true, ...summary, changes });
   }

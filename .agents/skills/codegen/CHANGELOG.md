@@ -9,6 +9,7 @@ Repo overrides live in `.codegen/templates/` and are never touched by an update.
 
 - Plop-style `actions` in pack.json: `add` (with `skipIfExists`), `addMany`, `modify`, `append` (`pattern`, `unique`, `separator`) and `custom`. Every action takes `when`. `modify` and `append` take `skipIfMissing`. `files` still works and runs first.
 - Paths starting with `/` are relative to the repo root and follow its `src/` layout. Content comes from `template` (a file) or `text` (inline).
+- `--dry-run` runs the same pre-write checks as a real run, so a target that already exists comes back as `ok: false` with `conflicts`.
 - All-or-nothing now covers edits: if any step fails, created files are removed and edited files are restored. A file that changed between planning and writing is refused.
 - Template helpers (`{{kebab title}}`; built-ins plus `packs/<pack>/helpers.mjs` and `.codegen/helpers.mjs`) and partials (`{{> name}}`, `{{> @pack/name}}`, in `templates/_partials/`). Names gain `snake` and `constant`.
 - `component`, `client-component` and `form-field` add `export * from './<name>';` to the output folder's `index.ts` when that barrel exists. Override `barrel/export.ts.tpl` to change its style.

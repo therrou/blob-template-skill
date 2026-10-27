@@ -156,3 +156,7 @@ test('a partial on its own line leaves no extra blank line', () => {
   const env = { partial: () => ({ text: 'P\n', source: 'p', env }) };
   assert.equal(render('a\n{{> p}}\nb', {}, 't', env), 'a\nP\nb');
 });
+
+test('helper and variable output is never scanned again as template syntax', () => {
+  assert.equal(render('{{upper v}}|{{v}}', { v: '{{w}}', w: 'x' }), '{{W}}|{{w}}');
+});

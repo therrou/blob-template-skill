@@ -101,7 +101,7 @@ Recommended existing ESLint rules that match the conventions:
 | `add` | `{ "type": "add", "path": "{{name.kebab}}.ts", "template": "util/util.ts.tpl", "skipIfExists": true }` | Creates a file. An existing file is a conflict, unless `skipIfExists`. |
 | `addMany` | `{ "type": "addMany", "templates": "feature", "path": "{{name.kebab}}" }` | Creates every `.tpl` under `templates/feature/`, keeping its layout. File names are templates too, and `.tpl` is dropped. |
 | `modify` | `{ "type": "modify", "path": "/app/layout.tsx", "pattern": "(<body[^>]*>)", "text": "$1<{{name.pascal}}Provider>" }` | Replaces the first match. `$1`/`$&` work as in `String.replace`. |
-| `append` | `{ "type": "append", "path": "index.ts", "template": "barrel/export.ts.tpl", "skipIfMissing": true }` | Adds a line at the end of the file, or after the first `pattern` match (`separator` defaults to a newline). With `unique` (default `true`) it skips text that is already there. |
+| `append` | `{ "type": "append", "path": "index.ts", "template": "barrel/export.ts.tpl", "skipIfMissing": true }` | Adds a line at the end of the file, or after the first `pattern` match. `separator` (default: a newline) goes between the match and the text, and only applies to pattern inserts; at the end of the file the text is always added as whole lines. With `unique` (default `true`) it skips text that is already there. |
 | `custom` | `{ "type": "custom", "module": "register-route.mjs" }` | Runs `packs/<pack>/actions/register-route.mjs`: `export default (ctx, { read, exists, render }) => [{ path, content }]`. It returns changes and never writes, so dry-run and rollback still apply. |
 
 - Every action takes `when` (a context key that must be true).

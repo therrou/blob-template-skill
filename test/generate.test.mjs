@@ -355,3 +355,11 @@ test('a repo override restyles the barrel line', () => {
   assert.equal(read(root, 'components/index.ts'), 'export * from "./user-card"\n');
   assert.ok(json.overridden.includes('components/index.ts'));
 });
+
+test('--dry-run reports conflicts the real run would refuse', () => {
+  const root = makeRepo({ files: { 'contexts/theme-context.tsx': 'taken' } });
+  const { status, json } = run(root, 'react', 'context', '--name', 'ThemeContext', '--dry-run');
+  assert.equal(status, 1);
+  assert.equal(json.ok, false);
+  assert.deepEqual(json.conflicts, ['contexts/theme-context.tsx']);
+});

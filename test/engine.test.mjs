@@ -265,3 +265,14 @@ test('end-of-file append is unique by whole line, not by substring', async () =>
   assert.deepEqual(skipped, []);
   assert.equal(files[0].content, "// export * from './thing';\nexport * from './thing';\n");
 });
+
+test('a path that is a directory is a CodegenError naming the action', async () => {
+  const repo = { dirs: ['out/sub'] };
+  await assert.rejects(planWith({ files: [], actions: [append({ path: 'sub' })] }, { repo }), /append: out\/sub is not a file/);
+});
+
+test('modify reports the expanded replacement as its change text', async () => {
+  const repo = { files: { 'out/m.ts': 'a\nb\n' } };
+  const { files } = await planWith({ files: [], actions: [{ type: 'modify', path: 'm.ts', pattern: '^(b)$', text: '$1-x' }] }, { repo });
+  assert.equal(files[0].text, 'b-x');
+});

@@ -13,8 +13,8 @@ const BLOCK_LINE = /^[ \t]*(\{\{(?:#(?:if|unless) [\w.]+|else|\/(?:if|unless))\}
 const INNERMOST_BLOCK = /\{\{#(if|unless) ([\w.]+)\}\}((?:(?!\{\{#(?:if|unless) )[\s\S])*?)\{\{\/\1\}\}/;
 const LEFTOVER_BLOCK = /\{\{(?:#(?:if|unless) |\/(?:if|unless)\}|else\}\})/;
 const PARTIAL = /\{\{>\s*(@?[\w./-]+)\s*\}\}/g;
-const HELPER = /\{\{\s*([A-Za-z]\w*)\s+([\w.]+)\s*\}\}/g;
-const VARIABLE = /\{\{\s*([\w.]+)\s*\}\}/g;
+// `{{helper path}}` or `{{path}}`, in one pass so substituted values are never scanned again.
+const EXPRESSION = /\{\{\s*(?:([A-Za-z]\w*)\s+)?([\w.]+)\s*\}\}/g;
 const PLACEHOLDER = /\u0000P(\d+)\u0000/g;
 
 const casing = (key) => (value) => nameCases(toWords(value))[key] ?? '';
@@ -54,13 +54,12 @@ export function render(template, ctx, source = 'template', env = {}, stack = [])
     out = out.slice(0, match.index) + chosen + out.slice(match.index + whole.length);
   }
   if (LEFTOVER_BLOCK.test(out)) throw new CodegenError(`Unbalanced {{#if}}/{{#unless}} block in ${source}.`);
-  out = out
-    .replace(HELPER, (_, name, key) => {
-      const helper = env.helpers?.[name] ?? BUILT_IN_HELPERS[name];
-      if (!helper) throw new CodegenError(`Unknown template helper "${name}" in ${source}.`);
-      return String(helper(scalar(ctx, key, source)));
-    })
-    .replace(VARIABLE, (_, key) => scalar(ctx, key, source));
+  out = out.replace(EXPRESSION, (_, name, key) => {
+    if (!name) return scalar(ctx, key, source);
+    const helper = env.helpers?.[name] ?? BUILT_IN_HELPERS[name];
+    if (!helper) throw new CodegenError(`Unknown template helper "${name}" in ${source}.`);
+    return String(helper(scalar(ctx, key, source)));
+  });
   return out.replace(PLACEHOLDER, (_, i) => {
     const ref = partials[i];
     if (stack.includes(ref)) throw new CodegenError(`Partial cycle: ${[...stack, ref].join(' -> ')}`);
