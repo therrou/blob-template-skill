@@ -393,3 +393,27 @@ test('cn import follows existing ui components', () => {
   run(root, 'react', 'component', '--name', 'Card', '--element', 'article');
   assert.match(read(root, 'components/card/card.tsx'), /import \{ cn \} from 'cn';/);
 });
+
+test('base primitives: --as-child emits a render prop with Base UI useRender', () => {
+  const root = makeRepo({ deps: { react: '^19', '@base-ui/react': '^1.9.0' }, files: { 'components.json': '{"style":"base-nova"}' } });
+  const { json } = run(root, 'react', 'component', '--name', 'Cta', '--element', 'button', '--as-child');
+  assert.equal(json.ok, true, JSON.stringify(json));
+  const src = read(root, 'components/cta/cta.tsx');
+  assert.match(src, /import \{ useRender \} from '@base-ui\/react\/use-render';/);
+  assert.match(src, /export type CtaProps = useRender\.ComponentProps<'button'> & \{/);
+  assert.match(src, /export function Cta\(\{ className, render, type = 'button', children, \.\.\.props \}: CtaProps\)/);
+  assert.match(src, /return useRender\(\{\n    defaultTagName: 'button',\n    render,\n    props: \{ className: className, type: render \? undefined : type, \.\.\.props, children \},\n  \}\);/);
+  assert.doesNotMatch(src, /asChild|Slot|forwardRef/);
+});
+
+test('base primitives: React 18 passes the forwarded ref; next-app makes it a client component; package required', () => {
+  const root = makeRepo({ deps: { next: '^16', react: '^18.3', '@base-ui/react': '^1.9.0' }, dirs: ['app'], files: { 'components.json': '{"style":"base-nova"}' } });
+  run(root, 'next', 'component', '--name', 'Cta', '--element', 'a', '--as-child');
+  const src = read(root, 'components/cta/cta.tsx');
+  assert.match(src, /^'use client';/);
+  assert.match(src, /export type CtaProps = Omit<useRender\.ComponentProps<'a'>, 'ref' \| 'href'> & \{ href: string \}/);
+  assert.match(src, /forwardRef<HTMLAnchorElement, CtaProps>/);
+  assert.match(src, /    render,\n    ref,\n/);
+  const bare = makeRepo({ deps: { react: '^19' }, files: { 'components.json': '{"style":"base-nova"}' } });
+  assert.deepEqual(run(bare, 'react', 'component', '--name', 'X', '--element', 'button', '--as-child').json.missing, ['@base-ui/react']);
+});

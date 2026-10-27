@@ -39,12 +39,28 @@ const REF_TYPES = {
   p: 'HTMLParagraphElement',
 };
 
+const REACT_IMPORTS = {
+  'r18': "import { forwardRef, type ComponentPropsWithoutRef } from 'react';",
+  'r18-base': "import { forwardRef } from 'react';",
+  'r19': "import type { ComponentProps } from 'react';",
+  'r19-base': '',
+};
+
 // React 18 function components don't receive `ref`, so they use forwardRef and props without ref.
-export function elementVars({ element, name, variants, asChild, cn, react18 = false }) {
+// Polymorphism is Radix Slot + asChild, or Base UI's useRender + render prop when primitives are Base UI.
+export function elementVars({ element, name, variants, asChild, cn, react18 = false, primitives = 'radix' }) {
   const isButton = element === 'button';
+  const baseUi = Boolean(asChild) && primitives === 'base';
   const variantsFn = `${name.camel}Variants`;
-  const props = react18 ? 'ComponentPropsWithoutRef' : 'ComponentProps';
-  const base = element === 'a' ? `Omit<${props}<'a'>, 'href'> & { href: string }` : `${props}<'${element}'>`;
+  let base;
+  if (baseUi) {
+    const omit = [react18 && "'ref'", element === 'a' && "'href'"].filter(Boolean);
+    const props = `useRender.ComponentProps<'${element}'>`;
+    base = (omit.length ? `Omit<${props}, ${omit.join(' | ')}>` : props) + (element === 'a' ? ' & { href: string }' : '');
+  } else {
+    const props = react18 ? 'ComponentPropsWithoutRef' : 'ComponentProps';
+    base = element === 'a' ? `Omit<${props}<'a'>, 'href'> & { href: string }` : `${props}<'${element}'>`;
+  }
 
   let classNameAttr = 'className={className}';
   if (variants && cn) classNameAttr = `className={cn(${variantsFn}({ variant, size }), className)}`;
@@ -52,13 +68,18 @@ export function elementVars({ element, name, variants, asChild, cn, react18 = fa
   else if (cn) classNameAttr = "className={cn('', className)}";
 
   return {
+    baseUi,
+    radixSlot: Boolean(asChild) && !baseUi,
+    reactImport: REACT_IMPORTS[`${react18 ? 'r18' : 'r19'}${baseUi ? '-base' : ''}`],
     tag: asChild ? 'Comp' : element,
     refType: REF_TYPES[element] ?? (/^h[1-6]$/.test(element) ? 'HTMLHeadingElement' : 'HTMLElement'),
-    propsType: [base, variants && `VariantProps<typeof ${variantsFn}>`, asChild && '{ asChild?: boolean }'].filter(Boolean).join(' & '),
-    params: ['className', variants && 'variant', variants && 'size', asChild && 'asChild = false', isButton && "type = 'button'", 'children', '...props']
+    propsType: [base, variants && `VariantProps<typeof ${variantsFn}>`, asChild && !baseUi && '{ asChild?: boolean }'].filter(Boolean).join(' & '),
+    params: ['className', variants && 'variant', variants && 'size', asChild && (baseUi ? 'render' : 'asChild = false'), isButton && "type = 'button'", 'children', '...props']
       .filter(Boolean)
       .join(', '),
     classNameAttr,
+    classNameProp: classNameAttr.replace(/^className=\{(.*)\}$/, 'className: $1'),
+    typeProp: isButton ? ', type: render ? undefined : type' : '',
     typeAttr: !isButton ? '' : asChild ? ' type={asChild ? undefined : type}' : ' type={type}',
     a11yNote: A11Y_NOTES[element] ?? '',
     testProps: element === 'a' ? ' href="/"' : '',

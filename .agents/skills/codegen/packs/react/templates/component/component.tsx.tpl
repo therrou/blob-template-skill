@@ -2,13 +2,14 @@
 'use client';
 
 {{/if}}
-{{#if profileIs.react.18}}
-import { forwardRef, type ComponentPropsWithoutRef } from 'react';
-{{else}}
-import type { ComponentProps } from 'react';
+{{#if el.reactImport}}
+{{el.reactImport}}
 {{/if}}
-{{#if asChild}}
+{{#if el.radixSlot}}
 import { Slot } from '{{slot.import}}';
+{{/if}}
+{{#if el.baseUi}}
+import { useRender } from '@base-ui/react/use-render';
 {{/if}}
 {{#if variants}}
 import { cva, type VariantProps } from 'class-variance-authority';
@@ -50,7 +51,18 @@ export const {{name.pascal}} = forwardRef<{{el.refType}}, {{name.pascal}}Props>(
 {{else}}
 export function {{name.pascal}}({ {{el.params}} }: {{name.pascal}}Props) {
 {{/if}}
-{{#if asChild}}
+{{#if el.baseUi}}
+  // TODO(codegen): implement markup in children; compose existing UI primitives and use design tokens only
+  return useRender({
+    defaultTagName: '{{element}}',
+    render,
+{{#if profileIs.react.18}}
+    ref,
+{{/if}}
+    props: { {{el.classNameProp}}{{el.typeProp}}, ...props, children },
+  });
+{{else}}
+{{#if el.radixSlot}}
   const Comp = asChild ? {{slot.component}} : '{{element}}';
 
 {{/if}}
@@ -60,6 +72,7 @@ export function {{name.pascal}}({ {{el.params}} }: {{name.pascal}}Props) {
       {children}
     </{{el.tag}}>
   );
+{{/if}}
 {{#if profileIs.react.18}}
 });
 {{name.pascal}}.displayName = '{{name.pascal}}';

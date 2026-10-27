@@ -219,7 +219,9 @@ async function planWithProfile({ skillDir, root, pack, generator, options, manif
   }
 
   if (ctx.element) {
-    ctx.el = elementVars({ element: ctx.element, name: ctx.name, variants: ctx.variants, asChild: ctx.asChild, cn: ctx.cn, react18: ctx.profile.react === '18' });
+    ctx.el = elementVars({ element: ctx.element, name: ctx.name, variants: ctx.variants, asChild: ctx.asChild, cn: ctx.cn, react18: ctx.profile.react === '18', primitives: ctx.profile.primitives });
+    // useRender is a hook, so a Base UI polymorphic component must be a client component in the App Router.
+    if (ctx.el.baseUi && ctx.profile.app === 'next-app') Object.assign(ctx, { client: true, server: false });
   }
 
   ctx.vitest = false;
