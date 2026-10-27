@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { pathToFileURL } from 'node:url';
 
 import { CodegenError } from './errors.mjs';
 import {
@@ -208,8 +209,32 @@ export async function plan({ skillDir, root, pack, generator, options }) {
     if (template.overridden) assertOverrideHandles(template, gen, ctx);
     return { content: render(fs.readFileSync(template.file, 'utf8'), ctx, action.template, envOf(template.owner)), overridden: template.overridden };
   };
+  const renderString = (text, c, source) => render(text, c, source, envOf(pack));
+  // "@react/x" refers to another pack's folder, like template refs do.
+  const split = (ref) => (ref.startsWith('@') ? [ref.slice(1, ref.indexOf('/')), ref.slice(ref.indexOf('/') + 1)] : [pack, ref]);
+  const listTemplates = (action) => {
+    const [owner, rel] = split(action.templates);
+    const base = path.join(skillDir, 'packs', owner, 'templates', rel);
+    if (!fs.existsSync(base)) throw new CodegenError(`addMany: template folder ${owner}/${rel} not found.`);
+    const walk = (dir) =>
+      fs.readdirSync(dir, { withFileTypes: true })
+        .sort((a, b) => (a.name < b.name ? -1 : 1))
+        .flatMap((e) => (e.isDirectory() ? (e.name === '_partials' ? [] : walk(path.join(dir, e.name))) : e.name.endsWith('.tpl') ? [path.join(dir, e.name)] : []));
+    return walk(base).map((file) => {
+      const sub = path.relative(base, file).split(path.sep).join('/');
+      return { template: `@${owner}/${rel}/${sub}`, path: `${action.path}/${sub.replace(/\.tpl$/, '')}` };
+    });
+  };
+  const loadCustom = async (action) => {
+    const [owner, rel] = split(action.module);
+    const file = path.join(skillDir, 'packs', owner, 'actions', rel);
+    if (!fs.existsSync(file)) throw new CodegenError(`custom: module ${owner}/actions/${rel} not found.`);
+    const fn = (await import(pathToFileURL(file).href)).default;
+    if (typeof fn !== 'function') throw new CodegenError(`custom ${action.module} must export a default function.`);
+    return fn;
+  };
   const actions = [...(gen.files ?? []).map((f) => ({ type: 'add', ...f })), ...(gen.actions ?? [])];
-  const { files, skipped } = await runActions(actions, { root, outDir, ctx, renderPath, renderText });
+  const { files, skipped } = await runActions(actions, { root, outDir, ctx, renderPath, renderText, renderString, listTemplates, loadCustom });
 
   const todo = files.flatMap((f) => {
     const before = f.kind === 'modify' ? findTodos(f.before).map((t) => t.text) : [];

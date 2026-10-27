@@ -210,3 +210,27 @@ test('root-relative paths follow the src/ rule; template and text are exclusive'
   await assert.rejects(planWith({ files: [], actions: [{ ...a, path: '/../x' }] }, { repo }), /outside the repo root/);
   await assert.rejects(planWith({ files: [], actions: [{ ...a, template: 'x.tpl' }] }, { repo }), /exactly one of template or text/);
 });
+
+test('addMany renders a template folder, names included, with per-file repo overrides', async () => {
+  const gen = {
+    files: [],
+    actions: [{ type: 'addMany', templates: 'feature', path: '{{name.kebab}}' }],
+    packFiles: {
+      't/templates/feature/{{name.kebab}}.ts.tpl': 'a',
+      't/templates/feature/parts/{{name.kebab}}-part.ts.tpl': 'b',
+    },
+  };
+  const { files } = await planWith(gen, { repo: { files: { '.codegen/templates/t/feature/parts/{{name.kebab}}-part.ts.tpl': 'B' } } });
+  assert.deepEqual(files.map((f) => [f.path, f.content, f.overridden]), [
+    ['out/thing/parts/thing-part.ts', 'B', true],
+    ['out/thing/thing.ts', 'a', false],
+  ]);
+});
+
+test('custom returns changes, sees planned files, and cannot leave the root', async () => {
+  const mod = (body) => ({ files: [], actions: [{ type: 'add', path: 'a.ts', text: 'A' }, { type: 'custom', module: 'm.mjs' }], packFiles: { 't/actions/m.mjs': body } });
+  const ok = "export default (ctx, api) => [{ path: 'b.ts', content: api.read('a.ts') + ctx.name.kebab }];";
+  assert.deepEqual((await planWith(mod(ok))).files.map((f) => [f.path, f.content]), [['out/a.ts', 'A'], ['out/b.ts', 'Athing']]);
+  await assert.rejects(planWith(mod("export default () => [{ path: '/../evil.ts', content: '' }];")), /outside the repo root/);
+  await assert.rejects(planWith(mod('export default () => null;')), /custom m\.mjs must return an array/);
+});

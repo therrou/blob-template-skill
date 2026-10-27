@@ -36,7 +36,7 @@ function compile(action) {
 }
 
 // Runs actions in order against an in-memory view of the files. Nothing touches the disk here.
-export async function runActions(actions, { root, outDir, ctx, renderPath, renderText }) {
+export async function runActions(actions, { root, outDir, ctx, renderPath, renderText, renderString, listTemplates, loadCustom }) {
   const planned = new Map();
   const skipped = [];
   const rel = (abs) => ensureInside(root, abs);
@@ -63,20 +63,41 @@ export async function runActions(actions, { root, outDir, ctx, renderPath, rende
     throw new CodegenError(`${action.type}: ${rel(abs)} does not exist.`);
   };
 
+  const add = (action) => {
+    const abs = resolveTarget(root, outDir, renderPath(action));
+    if (action.skipIfExists && read(abs) !== null) {
+      skipped.push({ path: rel(abs), action: action.type, reason: 'exists' });
+      return;
+    }
+    const { content, overridden } = renderText(action);
+    // An add on an existing file stays a create; write() reports it as a conflict.
+    planned.set(abs, { kind: 'create', abs, path: rel(abs), content, action: action.type, overridden });
+  };
+
   for (const action of actions) {
     if (action.when && !ctx[action.when]) continue;
+    if (action.type === 'add') {
+      add(action);
+      continue;
+    }
+    if (action.type === 'addMany') {
+      for (const file of listTemplates(action)) add({ ...action, type: 'addMany', ...file });
+      continue;
+    }
+    if (action.type === 'custom') {
+      const changes = await (await loadCustom(action))(ctx, {
+        read: (p) => read(resolveTarget(root, outDir, p)),
+        exists: (p) => read(resolveTarget(root, outDir, p)) !== null,
+        render: (text, c = ctx) => renderString(text, c, `custom ${action.module}`),
+      });
+      if (!Array.isArray(changes) || !changes.every((c) => typeof c?.path === 'string' && typeof c?.content === 'string')) {
+        throw new CodegenError(`custom ${action.module} must return an array of { path, content }.`);
+      }
+      for (const change of changes) touch(resolveTarget(root, outDir, change.path), action, change.content);
+      continue;
+    }
     const abs = resolveTarget(root, outDir, renderPath(action));
     switch (action.type) {
-      case 'add': {
-        if (action.skipIfExists && read(abs) !== null) {
-          skipped.push({ path: rel(abs), action: 'add', reason: 'exists' });
-          break;
-        }
-        const { content, overridden } = renderText(action);
-        // An add on an existing file stays a create; write() reports it as a conflict.
-        planned.set(abs, { kind: 'create', abs, path: rel(abs), content, action: 'add', overridden });
-        break;
-      }
       case 'modify': {
         const content = existing(abs, action);
         if (content === null) break;
