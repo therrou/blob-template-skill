@@ -475,3 +475,21 @@ test('server action takes (prevState, formData) for useActionState', () => {
   run(root, 'next', 'server-action', '--name', 'saveProfile');
   assert.match(read(root, 'actions/save-profile.ts'), /export async function saveProfileAction\(prevState: SaveProfileState, formData: FormData\): Promise<SaveProfileState>/);
 });
+
+test('unknown or out-of-matrix targets are refused by the generators that depend on them', () => {
+  const err = (deps, files, ...args) => run(makeRepo({ deps, files }), ...args).json.error ?? '';
+  assert.match(err({ react: '^17.0.2' }, {}, 'react', 'component', '--name', 'A', '--element', 'p'), /react 17 is not supported \(supported: 18, 19\)/);
+  assert.match(err({ next: '12.3.0' }, { 'app/.keep': '' }, 'next', 'route', '--name', 'x'), /next 12 is not supported/);
+  assert.match(err({ tailwindcss: 'catalog:' }, {}, 'react', 'component', '--name', 'A', '--element', 'p'), /styling could not be detected/);
+  assert.match(err({ next: 'catalog:' }, { 'app/.keep': '' }, 'next', 'route', '--name', 'blog/[slug]'), /next could not be detected/);
+  assert.match(err({}, { 'components.json': '{"style":"aria-nova"}' }, 'react', 'component', '--name', 'A', '--element', 'p', '--as-child'), /primitives aria is not supported/);
+  assert.equal(run(makeRepo({ deps: { react: '^17' } }), 'react', 'util', '--name', 'x').json.ok, true);
+});
+
+test('index routes: app/page.tsx, pages/index.tsx and pages/api/index.ts', () => {
+  const app = makeRepo({ deps: { next: '^16' }, dirs: ['app'] });
+  assert.deepEqual(run(app, 'next', 'route', '--name', '/').json.created, ['app/page.tsx']);
+  const pages = makeRepo({ deps: { next: '^15' }, dirs: ['pages'] });
+  assert.deepEqual(run(pages, 'next', 'route', '--name', '/').json.created, ['pages/index.tsx']);
+  assert.deepEqual(run(pages, 'next', 'api-route', '--name', '/').json.created, ['pages/api/index.ts']);
+});

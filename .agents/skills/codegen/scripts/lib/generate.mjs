@@ -109,6 +109,11 @@ function requiredPackages(gen, ctx) {
 function checkSupports(supports, profile, describe) {
   for (const [dim, allowed] of Object.entries(supports ?? {})) {
     const { value, supported } = profile.dims[dim] ?? {};
+    if (value === 'unknown') {
+      throw new CodegenError(
+        `${dim} could not be detected (unreadable version range and nothing installed). Set it in .codegen/config.json or pass --profile ${dim}=<value> (supported: ${describeAllowed(allowed)}).`,
+      );
+    }
     if (supported === false) {
       throw new CodegenError(
         `${dim} ${value} is not supported (supported: ${DIMENSIONS[dim].values.join(', ')}). Set it in .codegen/config.json if detection is wrong.`,
@@ -198,7 +203,7 @@ async function planWithProfile({ skillDir, root, pack, generator, options, manif
     if (ctx.profile.app === 'next-pages' && /(^|\/)[(@]/.test(route.route)) {
       throw new CodegenError('Route groups and @slots are App Router only.');
     }
-    Object.assign(ctx, route, { name });
+    Object.assign(ctx, route, { name, routeDir: route.route ? `${route.route}/` : '', routeFile: route.route || 'index' });
   } else {
     ctx.name = parseName(options.name, gen.strip);
   }
@@ -288,6 +293,16 @@ async function planWithProfile({ skillDir, root, pack, generator, options, manif
     if (typeof fn !== 'function') throw new CodegenError(`custom ${action.module} must export a default function.`);
     return fn;
   };
+  // Variants sharing one output path must cover the profile; otherwise a file would silently go missing.
+  const variants = new Map();
+  for (const f of (gen.files ?? []).filter((f) => f.when && typeof f.when === 'object')) {
+    variants.set(f.path, [...(variants.get(f.path) ?? []), f]);
+  }
+  for (const [variantPath, list] of variants) {
+    if (list.length > 1 && !list.some((f) => matches(f.when, ctx))) {
+      throw new CodegenError(`No template variant of ${render(variantPath, ctx, 'variant path')} matches this profile.`);
+    }
+  }
   const actions = [...(gen.files ?? []).map((f) => ({ type: 'add', ...f })), ...(gen.actions ?? [])];
   const { files, skipped } = await runActions(actions, { root, outDir, ctx, renderPath, renderText, renderString, listTemplates, loadCustom });
 

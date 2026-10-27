@@ -124,3 +124,24 @@ test('tailwind and plain repos keep the tailwind rules', () => {
   assert.equal(json.mode, 'tailwind');
   assert.equal(json.violations[0].rule, 'arbitrary-value');
 });
+
+test('css-in-js scanner: color functions with commas, nested templates, MUI object styles', () => {
+  const root = repo({
+    'package.json': JSON.stringify({ dependencies: { '@emotion/styled': '^11' } }),
+    'src/a.tsx': [
+      'const A = styled.div`',
+      '  background: rgba(0, 0, 0, 0.5);',
+      '  ${(p) => p.$on && css`',
+      '    color: ${({ theme }) => theme.colors.fg};',
+      '  `}',
+      '  margin: 16px;',
+      '`;',
+      "const B = styled('div')(({ theme }) => ({ color: '#ff0000', padding: theme.spacing(2) }));",
+      "const C = styled.input.attrs({ type: 'text' })`",
+      '  border-color: hsl(210, 40%, 50%);',
+      '`;',
+    ].join('\n'),
+  });
+  const { json } = check(root, 'src');
+  assert.deepEqual(json.violations.map((v) => [v.line, v.rule]), [[2, 'css-color-literal'], [6, 'css-length-literal'], [8, 'css-color-literal'], [10, 'css-color-literal']]);
+});

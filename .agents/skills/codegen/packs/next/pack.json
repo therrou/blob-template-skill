@@ -3,6 +3,7 @@
   "vars": { "client": false, "server": true, "serverOnly": false },
   "generators": {
     "component": {
+      "supports": { "react": ["18", "19"], "styling": ["tailwind-3", "tailwind-4", "styled-components", "emotion", "plain"], "primitives": ["radix", "base", "none"] },
       "description": "Server Component (default choice) in its own kebab-case folder with an index barrel.",
       "out": "components",
       "options": {
@@ -23,6 +24,7 @@
       "actions": [{ "type": "append", "path": "index.ts", "template": "@react/barrel/export.ts.tpl", "skipIfMissing": true }]
     },
     "client-component": {
+      "supports": { "react": ["18", "19"], "styling": ["tailwind-3", "tailwind-4", "styled-components", "emotion", "plain"], "primitives": ["radix", "base", "none"] },
       "description": "Client Component ('use client') for state, effects, event handlers or browser APIs. Keep it a small leaf.",
       "out": "components",
       "vars": { "client": true, "server": false },
@@ -77,6 +79,7 @@
       ]
     },
     "route": {
+      "supports": { "next": ["13", "14", "15", "16"] },
       "description": "App Router segment: page.tsx plus optional layout/loading/error. --name is the route path, e.g. blog/[slug] or (marketing)/about.",
       "out": [{ "when": { "app": "next-pages" }, "out": "pages" }, { "out": "app" }],
       "nameKind": "route",
@@ -86,14 +89,15 @@
         "with-error": { "type": "boolean", "supports": { "app": ["!next-pages"] }, "description": "Add error.tsx (client error boundary)." }
       },
       "files": [
-        { "template": "route/page.tsx.tpl", "path": "{{route}}/page.tsx", "when": { "app": "!next-pages" } },
-        { "template": "pages-route/page.tsx.tpl", "path": "{{route}}.tsx", "when": { "app": "next-pages" } },
-        { "template": "route/layout.tsx.tpl", "path": "{{route}}/layout.tsx", "when": "withLayout" },
-        { "template": "route/loading.tsx.tpl", "path": "{{route}}/loading.tsx", "when": "withLoading" },
-        { "template": "route/error.tsx.tpl", "path": "{{route}}/error.tsx", "when": "withError" }
+        { "template": "route/page.tsx.tpl", "path": "{{routeDir}}page.tsx", "when": { "app": "!next-pages" } },
+        { "template": "pages-route/page.tsx.tpl", "path": "{{routeFile}}.tsx", "when": { "app": "next-pages" } },
+        { "template": "route/layout.tsx.tpl", "path": "{{routeDir}}layout.tsx", "when": "withLayout" },
+        { "template": "route/loading.tsx.tpl", "path": "{{routeDir}}loading.tsx", "when": "withLoading" },
+        { "template": "route/error.tsx.tpl", "path": "{{routeDir}}error.tsx", "when": "withError" }
       ]
     },
     "api-route": {
+      "supports": { "next": ["13", "14", "15", "16"] },
       "description": "Route Handler (route.ts) under app/api. --name is the path below /api, e.g. users/[id].",
       "out": [{ "when": { "app": "next-pages" }, "out": "pages/api" }, { "out": "app/api" }],
       "nameKind": "route",
@@ -101,13 +105,13 @@
         "with-test": { "type": "boolean", "description": "Add a handler test that calls GET with a Request.", "supports": { "app": ["!next-pages"] } }
       },
       "files": [
-        { "template": "api-route/route.ts.tpl", "path": "{{route}}/route.ts", "when": { "app": "!next-pages" } },
-        { "template": "pages-api/route.ts.tpl", "path": "{{route}}.ts", "when": { "app": "next-pages" } },
-        { "template": "api-route/route.test.ts.tpl", "path": "{{route}}/route.test.ts", "when": "withTest" }
+        { "template": "api-route/route.ts.tpl", "path": "{{routeDir}}route.ts", "when": { "app": "!next-pages" } },
+        { "template": "pages-api/route.ts.tpl", "path": "{{routeFile}}.ts", "when": { "app": "next-pages" } },
+        { "template": "api-route/route.test.ts.tpl", "path": "{{routeDir}}route.test.ts", "when": "withTest" }
       ]
     },
     "server-action": {
-      "supports": { "app": ["!next-pages"] },
+      "supports": { "app": ["!next-pages"], "next": ["13", "14", "15", "16"] },
       "description": "Server Action module ('use server') for mutations called from forms or client components.",
       "out": "actions",
       "strip": ["action"],
@@ -115,7 +119,7 @@
       "files": [{ "template": "server-action/action.ts.tpl", "path": "{{name.kebab}}.ts" }]
     },
     "form-field": {
-      "supports": { "primitives": ["radix", "none"], "styling": ["tailwind-3", "tailwind-4", "plain"] },
+      "supports": { "react": ["18", "19"], "primitives": ["radix", "none"], "styling": ["tailwind-3", "tailwind-4", "plain"] },
       "description": "react-hook-form field on the shadcn form primitives: label, control, description and error wired for a11y. Validation lives in the form's zod schema. Always a Client Component.",
       "out": "components",
       "vars": { "client": true },

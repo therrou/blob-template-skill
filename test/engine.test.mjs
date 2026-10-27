@@ -306,3 +306,9 @@ test('a !value condition excludes one value in when and supports', async () => {
   assert.deepEqual((await planWith(gen, { options: { profile: 'app=next-pages' } })).files.map((f) => f.path), ['out/b.ts']);
   await assert.rejects(planWith(gen, { options: { profile: 'styling=emotion' } }), /does not support styling emotion \(supported: anything but emotion\)/);
 });
+
+test('a file whose variants all fail to match is an error, not a silent skip', async () => {
+  const gen = { files: [{ template: 'x.tpl', path: 'a.ts', when: { react: '18' } }, { template: 'x.tpl', path: 'a.ts', when: { styling: 'emotion' } }] };
+  assert.equal((await planWith(gen, { options: { profile: 'react=18' } })).files.length, 1);
+  await assert.rejects(planWith(gen, { options: { profile: 'react=19' } }), /No template variant of a\.ts matches this profile/);
+});

@@ -127,64 +127,118 @@ function isPaletteToken(match, colors) {
   return m && colors.has(m[0]);
 }
 
-// CSS-in-JS: styled/css template literals and sx/css/style or styled(...)({ … }) objects.
-const TEMPLATE_OPEN = /\b(?:styled(?:\.\w+|\([^)]*\))(?:<[^`]*>)?|css|keyframes|createGlobalStyle)`/;
-const OBJECT_OPEN = /\b(?:sx|css|style)=\{\{|\bstyled\([^)]*\)\(\{/;
-const THEME_REF = /\btheme\b/;
+// CSS-in-JS: styled/css template literals, and style objects (sx/css/style props, styled(x)(…), css(…)).
+const TEMPLATE_OPEN = /\b(?:styled(?:\.\w+|\([^)]*\))(?:\.attrs\((?:[^()]|\([^()]*\))*\))?(?:<[^`]*>)?|css|keyframes|createGlobalStyle)`/g;
+const OBJECT_OPEN = /\b(?:sx|css|style)=(\{)|\bstyled(?:\.\w+|\([^)]*\))(\()|\bcss(\()/g;
+const THEME_REF = /\btheme\s*[.[(]/;
+const CLOSE = { '(': ')', '{': '}' };
 const CSS_RULES = [
   {
     rule: 'css-font-literal',
     message: 'Hard-coded font size or weight: use a theme value (theme.typography / theme.fontSizes).',
-    regex: /\b(?:font-size|fontSize|font-weight|fontWeight)\s*:\s*['"]?\d[\w.]*/,
+    regex: /\b(?:font-size|fontSize|font-weight|fontWeight)\s*:\s*['"]?\d[\w.]*/g,
   },
   {
     rule: 'css-color-literal',
     message: 'Hard-coded color: use a theme color.',
-    regex: /#[0-9a-fA-F]{3,8}\b|\b(?:rgba?|hsla?|oklch|oklab)\([^)]*\)/,
+    regex: /#[0-9a-fA-F]{3,8}\b|\b(?:rgba?|hsla?|oklch|oklab)\([^)]*\)/g,
   },
   {
     rule: 'css-length-literal',
-    message: 'Hard-coded length: use theme spacing or sizes (0 and 1px are fine).',
+    message: 'Hard-coded length: use theme spacing, sizes or breakpoints (0 and 1px are fine).',
     regex: /(?<![\w.-])\d*\.?\d+(?:px|rem|em)\b/g,
     allow: (m) => m === '1px' || Number.parseFloat(m) === 0,
   },
 ];
 
-// Splits the styled parts of each line into declarations; a declaration that references `theme` is fine.
+// Splits on `;` and on commas that aren't inside parentheses (so rgba(0, 0, 0) stays whole).
+function declarations(scope) {
+  const out = [];
+  const stack = [];
+  let current = '';
+  for (const ch of scope) {
+    if (ch === '(' || ch === '{') stack.push(ch);
+    else if ((ch === ')' || ch === '}') && stack.length) stack.pop();
+    if (ch === ';' || (ch === ',' && stack.at(-1) !== '(')) {
+      out.push(current);
+      current = '';
+    } else current += ch;
+  }
+  return [...out, current];
+}
+
+function firstOpener(text, from) {
+  const found = [];
+  for (const regex of [TEMPLATE_OPEN, OBJECT_OPEN]) {
+    regex.lastIndex = from;
+    const m = regex.exec(text);
+    if (m) found.push(m);
+  }
+  return found.sort((a, b) => a.index - b.index)[0];
+}
+
+// Collects the CSS text of each line. Contexts: 'tpl' (template CSS), 'expr' (${…} JS, never CSS),
+// 'brace' (JS braces inside an expression), and object styles counted by their opening bracket.
+function cssScopes(lines) {
+  const stack = [];
+  let object = null; // { open, depth }
+  return lines.map((text) => {
+    let scope = '';
+    let i = 0;
+    while (i < text.length) {
+      if (object) {
+        const ch = text[i];
+        if (ch === object.open) object.depth++;
+        else if (ch === CLOSE[object.open] && --object.depth === 0) {
+          object = null;
+          i++;
+          continue;
+        }
+        scope += ch;
+        i++;
+        continue;
+      }
+      if (!stack.length) {
+        const m = firstOpener(text, i);
+        if (!m) break;
+        if (m[0].endsWith('`')) {
+          stack.push('tpl');
+          i = m.index + m[0].length;
+        } else {
+          const bracket = m[1] ?? m[2] ?? m[3];
+          object = { open: bracket, depth: 1 };
+          i = m.index + m[0].length;
+        }
+        scope += ' ';
+        continue;
+      }
+      const ch = text[i];
+      const top = stack.at(-1);
+      if (top === 'tpl') {
+        if (ch === '`') stack.pop();
+        else if (ch === '$' && text[i + 1] === '{') {
+          stack.push('expr');
+          scope += ' ';
+          i++;
+        } else scope += ch;
+      } else if (ch === '`') stack.push('tpl');
+      else if (ch === '{') stack.push('brace');
+      else if (ch === '}') stack.pop();
+      i++;
+    }
+    return scope;
+  });
+}
+
+// A declaration that references `theme` (theme.x, theme[...], theme(...)) is fine.
 function cssInJsViolations(file, lines) {
   const violations = [];
-  let inTemplate = false;
-  let objectDepth = 0;
-  lines.forEach((text, i) => {
-    let scope = '';
-    if (inTemplate) {
-      const end = text.indexOf('`');
-      scope = end === -1 ? text : text.slice(0, end);
-      if (end !== -1) inTemplate = false;
-    } else if (objectDepth > 0) {
-      scope = text;
-    } else {
-      const template = TEMPLATE_OPEN.exec(text);
-      const object = OBJECT_OPEN.exec(text);
-      if (template) {
-        const rest = text.slice(template.index + template[0].length);
-        const end = rest.indexOf('`');
-        scope = end === -1 ? rest : rest.slice(0, end);
-        inTemplate = end === -1;
-      } else if (object) {
-        scope = text.slice(object.index);
-      }
-    }
-    if (objectDepth > 0 || OBJECT_OPEN.test(scope)) {
-      for (const ch of scope) objectDepth += ch === '{' ? 1 : ch === '}' ? -1 : 0;
-      objectDepth = Math.max(objectDepth, 0);
-    }
-    if (!scope || ALLOW_COMMENT.test(text) || (i > 0 && ALLOW_COMMENT.test(lines[i - 1]))) return;
-    for (const declaration of scope.split(/[;,]/)) {
+  cssScopes(lines).forEach((scope, i) => {
+    if (!scope.trim() || ALLOW_COMMENT.test(lines[i]) || (i > 0 && ALLOW_COMMENT.test(lines[i - 1]))) return;
+    for (const declaration of declarations(scope)) {
       if (THEME_REF.test(declaration)) continue;
       for (const { rule, message, regex, allow } of CSS_RULES) {
-        const found = regex.global ? [...declaration.matchAll(regex)].map((m) => m[0]) : [regex.exec(declaration)?.[0]].filter(Boolean);
-        const match = found.find((m) => !allow?.(m));
+        const match = [...declaration.matchAll(regex)].map((m) => m[0]).find((m) => !allow?.(m));
         if (match) {
           violations.push({ file, line: i + 1, rule, match, message });
           break;

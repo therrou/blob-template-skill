@@ -75,7 +75,7 @@ The generator detects the stack first (`generate.mjs --detect`) and picks templa
 
 ## Token rules for CSS-in-JS
 
-In styled-components and Emotion repos, `check-tokens` runs in `css-in-js` mode. Inside styled template literals (`styled.x\`…\``, `css\`…\``) and style objects (`sx={{…}}`, `css={{…}}`, `style={{…}}`, `styled(x)({…})`), it flags hard-coded colors, lengths other than `0` and `1px`, and numeric font sizes and weights. A declaration that references `theme` is fine. It checks that the theme is used, not that the key exists in the theme.
+In styled-components and Emotion repos, `check-tokens` runs in `css-in-js` mode. Inside styled template literals (`styled.x\`…\``, `styled.x.attrs(…)\`…\``, `css\`…\``, nested ones included) and style objects (`sx={{…}}`, `css={{…}}`, `style={{…}}`, `styled(x)({…})`, `styled(x)(({ theme }) => ({…}))`, `css({…})`), it flags hard-coded colors, lengths other than `0` and `1px` (media queries included: use theme breakpoints), and numeric font sizes and weights. Values inside `${…}` interpolations are code, not CSS, and object declarations that reference `theme.` are fine. It checks that the theme is used, not that the key exists in the theme.
 
 ## Enforcing it outside the agent
 
