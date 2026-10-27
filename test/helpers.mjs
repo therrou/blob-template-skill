@@ -20,12 +20,17 @@ export function makeRepo({ deps = {}, dirs = [], files = {} } = {}) {
 }
 
 // A throwaway skill with one pack "t" and one generator "g", for engine tests.
-export function makeSkill({ template = 'x', ...generator } = {}) {
+// packFiles: extra files relative to the skill's packs/ dir, e.g. { 't/helpers.mjs': '...' }.
+export function makeSkill({ template = 'x', packFiles = {}, ...generator } = {}) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'codegen-skill-'));
   fs.mkdirSync(path.join(dir, 'packs', 't', 'templates'), { recursive: true });
   fs.writeFileSync(path.join(dir, 'packs', 't', 'templates', 'x.tpl'), template);
   const g = { out: 'out', options: {}, files: [{ template: 'x.tpl', path: '{{name.kebab}}.ts' }], ...generator };
   fs.writeFileSync(path.join(dir, 'packs', 't', 'pack.json'), JSON.stringify({ vars: {}, generators: { g } }));
+  for (const [p, c] of Object.entries(packFiles)) {
+    fs.mkdirSync(path.dirname(path.join(dir, 'packs', p)), { recursive: true });
+    fs.writeFileSync(path.join(dir, 'packs', p), c);
+  }
   return dir;
 }
 

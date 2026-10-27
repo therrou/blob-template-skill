@@ -17,6 +17,7 @@ import { installCommand, missingDependencies } from './deps.mjs';
 import { elementVars } from './elements.mjs';
 import { parseName } from './names.mjs';
 import { parseRoute } from './route.mjs';
+import { loadHelpers } from './helpers.mjs';
 import { findTodos, render } from './template.mjs';
 
 export const GLOBAL_OPTIONS = {
@@ -54,12 +55,38 @@ export function loadPack(skillDir, pack) {
 
 // "@react/util/util.ts.tpl" borrows a template from another pack.
 // A repo override at .codegen/templates/<pack>/<path> always wins.
-function resolveTemplate(skillDir, root, pack, ref) {
+export function resolveTemplate(skillDir, root, pack, ref) {
   const [owner, rel] = ref.startsWith('@') ? [ref.slice(1, ref.indexOf('/')), ref.slice(ref.indexOf('/') + 1)] : [pack, ref];
   const override = path.join(root, '.codegen', 'templates', owner, rel);
   const shipped = path.join(skillDir, 'packs', owner, 'templates', rel);
-  if (fs.existsSync(override)) return { file: override, overridden: true, shipped, label: `.codegen/templates/${owner}/${rel}` };
-  return { file: shipped, overridden: false };
+  if (fs.existsSync(override)) return { file: override, overridden: true, shipped, label: `.codegen/templates/${owner}/${rel}`, owner };
+  return { file: shipped, overridden: false, owner };
+}
+
+// Render env for templates owned by `owner`: its helpers, and partials resolved from the same owner,
+// so a borrowed template renders the same whichever pack runs it.
+export function templateEnvs(skillDir, root) {
+  const cache = new Map();
+  const envFor = async (owner) => {
+    if (cache.has(owner)) return cache.get(owner);
+    const env = { helpers: await loadHelpers(skillDir, root, owner), partial: null };
+    cache.set(owner, env);
+    return env;
+  };
+  // Partials need their owner's env synchronously while rendering, so preload every pack's env.
+  const preload = async () => {
+    for (const pack of listPacks(skillDir)) {
+      const env = await envFor(pack);
+      env.partial = (ref) => {
+        const target = ref.startsWith('@') ? `${ref.slice(0, ref.indexOf('/'))}/_partials/${ref.slice(ref.indexOf('/') + 1)}.tpl` : `_partials/${ref}.tpl`;
+        const t = resolveTemplate(skillDir, root, pack, target);
+        if (!fs.existsSync(t.file)) return null;
+        return { text: fs.readFileSync(t.file, 'utf8'), source: t.overridden ? t.label : `${t.owner}/${target.replace(/^@[^/]+\//, '')}`, env: cache.get(t.owner) };
+      };
+    }
+    return (owner) => cache.get(owner);
+  };
+  return preload();
 }
 
 // An override written before a flag existed would silently drop it (and break files that rely on it).
@@ -82,7 +109,7 @@ function requiredPackages(gen, ctx) {
   return [...(gen.requires ?? []), ...fromOptions];
 }
 
-export function plan({ skillDir, root, pack, generator, options }) {
+export async function plan({ skillDir, root, pack, generator, options }) {
   const manifest = loadPack(skillDir, pack);
   const gen = manifest.generators[generator];
   if (!gen) {
@@ -175,17 +202,18 @@ export function plan({ skillDir, root, pack, generator, options }) {
   const outDir = path.resolve(root, options.out ?? resolveOut(root, gen.out));
   ensureInside(root, outDir);
 
+  const envOf = await templateEnvs(skillDir, root);
   const files = gen.files
     .filter((f) => !f.when || Boolean(ctx[f.when]))
     .map((f) => {
       const template = resolveTemplate(skillDir, root, pack, f.template);
-      const { file, overridden } = template;
+      const { file, overridden, owner } = template;
       if (overridden) assertOverrideHandles(template, gen, ctx);
       const abs = path.join(outDir, render(f.path, ctx, `path of ${f.template}`));
       return {
         abs,
         path: ensureInside(root, abs),
-        content: render(fs.readFileSync(file, 'utf8'), ctx, f.template),
+        content: render(fs.readFileSync(file, 'utf8'), ctx, f.template, envOf(owner)),
         overridden,
       };
     });

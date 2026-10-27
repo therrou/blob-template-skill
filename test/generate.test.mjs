@@ -215,7 +215,7 @@ test('--as-child uses the installed Radix Slot and keeps type off the child', ()
   assert.deepEqual(run(makeRepo(), 'react', 'component', '--name', 'X', '--element', 'a', '--as-child').json.missing, ['@radix-ui/react-slot']);
 });
 
-test('every element × variants × as-child × cn combination renders consistent TSX', () => {
+test('every element × variants × as-child × cn combination renders consistent TSX', async () => {
   const pack = JSON.parse(fs.readFileSync(path.join(skillDir, 'packs/react/pack.json'), 'utf8'));
   const deps = { 'class-variance-authority': '^0.7', '@radix-ui/react-slot': '^1' };
   const roots = [makeRepo({ deps }), makeRepo({ deps, files: { 'lib/utils.ts': 'export function cn() {}' } })];
@@ -224,7 +224,7 @@ test('every element × variants × as-child × cn combination renders consistent
       for (const variants of [false, true]) {
         for (const asChild of [false, true]) {
           const options = { name: `x-${element}`, element, ...(variants && { variants: true }), ...(asChild && { 'as-child': true }) };
-          const [main, index] = plan({ skillDir, root, pack: 'react', generator: 'component', options }).files;
+          const [main, index] = (await plan({ skillDir, root, pack: 'react', generator: 'component', options })).files;
           const src = main.content;
           const label = `${element} variants=${variants} asChild=${asChild}`;
           const tag = asChild ? 'Comp' : element;

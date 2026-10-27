@@ -50,7 +50,7 @@ function describe(only) {
   return { usage: 'node generate.mjs <pack> <generator> --name <name> [options]', globalOptions: GLOBAL_OPTIONS, packs };
 }
 
-function main() {
+async function main() {
   const { positional, options } = parseArgs(process.argv.slice(2));
   if (options.list || options.help || positional.length === 0) return print(describe(positional[0]));
 
@@ -60,7 +60,7 @@ function main() {
     if (genOptions[key] === true) throw new CodegenError(`--${key} needs a value.`);
   }
   const root = path.resolve(genOptions.root ?? process.cwd());
-  const result = plan({ skillDir, root, pack, generator, options: genOptions });
+  const result = await plan({ skillDir, root, pack, generator, options: genOptions });
   const files = result.files.map((f) => f.path);
   const overridden = result.files.filter((f) => f.overridden).map((f) => f.path);
 
@@ -79,9 +79,7 @@ function main() {
   });
 }
 
-try {
-  main();
-} catch (err) {
+main().catch((err) => {
   if (!(err instanceof CodegenError)) throw err;
   print({ ok: false, error: err.message, ...err.details }, 1);
-}
+});
