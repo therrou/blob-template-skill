@@ -66,7 +66,8 @@ export function render(template, ctx, source = 'template', env = {}, stack = [])
     if (stack.includes(ref)) throw new CodegenError(`Partial cycle: ${[...stack, ref].join(' -> ')}`);
     const partial = env.partial?.(ref);
     if (!partial) throw new CodegenError(`Unknown partial "${ref}" in ${source}.`);
-    return render(partial.text, ctx, partial.source, partial.env, [...stack, ref]);
+    // The placeholder's own line break follows it, so drop the partial file's final newline.
+    return render(partial.text, ctx, partial.source, partial.env, [...stack, ref]).replace(/\r?\n$/, '');
   });
 }
 

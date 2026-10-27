@@ -258,3 +258,10 @@ test('a file changed between plan and write is refused', async () => {
   assert.throws(() => write(files), /out\/index\.ts changed while generating; nothing was written/);
   assert.equal(fs.readFileSync(path.join(root, 'out/index.ts'), 'utf8'), 'edited\n');
 });
+
+test('end-of-file append is unique by whole line, not by substring', async () => {
+  const repo = { files: { 'out/index.ts': "// export * from './thing';\n" } };
+  const { files, skipped } = await planWith({ files: [], actions: [append()] }, { repo });
+  assert.deepEqual(skipped, []);
+  assert.equal(files[0].content, "// export * from './thing';\nexport * from './thing';\n");
+});

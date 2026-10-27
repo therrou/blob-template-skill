@@ -151,3 +151,8 @@ test('render inserts partials, nested, and rejects cycles', () => {
 test('helper syntax never touches JSX object literals', () => {
   assert.equal(render("<p style={{ color: 'red' }} data={{a, b}} />", {}), "<p style={{ color: 'red' }} data={{a, b}} />");
 });
+
+test('a partial on its own line leaves no extra blank line', () => {
+  const env = { partial: () => ({ text: 'P\n', source: 'p', env }) };
+  assert.equal(render('a\n{{> p}}\nb', {}, 't', env), 'a\nP\nb');
+});

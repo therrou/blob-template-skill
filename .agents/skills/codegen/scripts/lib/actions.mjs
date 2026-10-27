@@ -113,7 +113,10 @@ export async function runActions(actions, { root, outDir, ctx, renderPath, rende
         const rendered = renderText(action);
         const eol = content.includes('\r\n') ? '\r\n' : '\n';
         const text = rendered.content.replace(/\r?\n$/, '').replace(/\r?\n/g, eol);
-        if ((action.unique ?? true) && content.includes(text)) {
+        // At end of file, compare whole lines so a commented-out copy doesn't count as present.
+        const lf = (v) => v.replace(/\r\n/g, '\n');
+        const present = action.pattern !== undefined ? content.includes(text) : `\n${lf(content)}\n`.includes(`\n${lf(text)}\n`);
+        if ((action.unique ?? true) && present) {
           skipped.push({ path: rel(abs), action: 'append', reason: 'already present' });
           break;
         }
