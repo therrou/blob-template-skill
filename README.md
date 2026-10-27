@@ -39,7 +39,8 @@ node .agents/skills/codegen/scripts/check-tokens.mjs src/components/user-card
 ```
 
 Guarantees:
-- The generator never overwrites. If any target file exists, nothing is written.
+- The generator never overwrites. If any file it would create exists, nothing is written.
+- Runs are all-or-nothing, including edits to existing files: if any step fails, created files are removed and edited files are restored.
 - Paths outside the repo root are rejected.
 - Unknown flags are errors.
 - Output is always JSON.
@@ -48,7 +49,10 @@ Guarantees:
 
 ## Template syntax
 
-`{{name.pascal}}`, `{{name.camel}}`, `{{name.kebab}}`, plus `{{#if x}}…{{else}}…{{/if}}` and `{{#unless x}}`. A block tag alone on a line removes that line. Unknown variables are errors. Mark anything the agent must finish with `TODO(codegen): <instruction>`. The generator reports these markers, and `check-tokens` fails until they're gone.
+`{{name.pascal}}`, `{{name.camel}}`, `{{name.kebab}}`, `{{name.snake}}`, `{{name.constant}}`, plus `{{#if x}}…{{else}}…{{/if}}` and `{{#unless x}}`. A block tag alone on a line removes that line. Unknown variables are errors.
+
+- **Helpers**: `{{kebab title}}` calls a helper with one variable. Built-ins: `pascal`, `camel`, `kebab`, `snake`, `constant`, `lower`, `upper`. A pack adds its own in `packs/<pack>/helpers.mjs` and a repo in `.codegen/helpers.mjs` (`export default { name: (value) => string }`). Repo helpers win over pack helpers, which win over built-ins.
+- **Partials**: `{{> name}}` inserts `packs/<pack>/templates/_partials/<name>.tpl`, and `{{> @react/name}}` borrows one from another pack. A template always uses the partials and helpers of the pack that owns it, even when another pack borrows it. A repo overrides a partial like any template: `.codegen/templates/<pack>/_partials/<name>.tpl`. Mark anything the agent must finish with `TODO(codegen): <instruction>`. The generator reports these markers, and `check-tokens` fails until they're gone.
 
 ## Enforcing it outside the agent
 
@@ -84,9 +88,27 @@ Recommended existing ESLint rules that match the conventions:
 
 ## Adding a pack or generator
 
-1. Create `packs/<pack>/pack.json`. See `packs/next/pack.json` for every field: `out`, `options` (with `required`, `choices` and `requires`), `files[].when`, `vars`, `strip`, `nameKind: "route"`, `requires` and `requiresUi`.
+1. Create `packs/<pack>/pack.json`. See `packs/next/pack.json` for every field: `out`, `options` (with `required`, `choices` and `requires`), `files[].when`, `actions`, `vars`, `strip`, `nameKind: "route"`, `requires` and `requiresUi`.
 2. Add `templates/` and a `CONVENTIONS.md`.
 3. Add tests in `test/generate.test.mjs` (engine features in `test/engine.test.mjs`), then run `npm test`.
+
+### Actions
+
+`files` creates files. `actions` does everything else, in order, after `files`, in the spirit of plop:
+
+| Type | Example | What it does |
+|---|---|---|
+| `add` | `{ "type": "add", "path": "{{name.kebab}}.ts", "template": "util/util.ts.tpl", "skipIfExists": true }` | Creates a file. An existing file is a conflict, unless `skipIfExists`. |
+| `addMany` | `{ "type": "addMany", "templates": "feature", "path": "{{name.kebab}}" }` | Creates every `.tpl` under `templates/feature/`, keeping its layout. File names are templates too, and `.tpl` is dropped. |
+| `modify` | `{ "type": "modify", "path": "/app/layout.tsx", "pattern": "(<body[^>]*>)", "text": "$1<{{name.pascal}}Provider>" }` | Replaces the first match. `$1`/`$&` work as in `String.replace`. |
+| `append` | `{ "type": "append", "path": "index.ts", "template": "barrel/export.ts.tpl", "skipIfMissing": true }` | Adds a line at the end of the file, or after the first `pattern` match (`separator` defaults to a newline). With `unique` (default `true`) it skips text that is already there. |
+| `custom` | `{ "type": "custom", "module": "register-route.mjs" }` | Runs `packs/<pack>/actions/register-route.mjs`: `export default (ctx, { read, exists, render }) => [{ path, content }]`. It returns changes and never writes, so dry-run and rollback still apply. |
+
+- Every action takes `when` (a context key that must be true).
+- `path` is relative to the generator's output folder. A leading `/` makes it relative to the repo root, and its first folder follows the repo's `src/` layout (`/app/layout.tsx` → `src/app/layout.tsx`).
+- Content comes from exactly one of `template` (a file, which repos can override) or `text` (inline).
+- `modify` and `append` fail when the file or the pattern is missing. `skipIfMissing` skips instead.
+- Output lists `created`, `modified` and `skipped`, and `--dry-run` adds `changes` with the text each edit inserts.
 
 ## Behavior evals
 

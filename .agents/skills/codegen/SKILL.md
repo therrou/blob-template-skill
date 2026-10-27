@@ -24,10 +24,12 @@ Paths below are relative to the repo root: `SKILL=.agents/skills/codegen`.
 5. **Generate** from the app root (the folder that holds its `package.json`), or pass `--root`:
    `node $SKILL/scripts/generate.mjs <pack> <generator> --name <name> [options]`
    - Unsure where the files will land? Run with `--dry-run` first.
+   - The output lists `created`, `modified` (existing files the generator edited, such as a barrel) and `skipped`.
+   - An error from a `modify` or `append` step means the target file isn't in the shape the generator expects. Tell the user; don't hand-edit around it.
    - Output of `ok: false` with `conflicts` means the files already exist. Reuse them or choose another name. Never delete files in order to regenerate them.
    - Output of `ok: false` with `missing` / `missingUi` means a package or shadcn primitive is missing. Show the user the `install` command and ask before running it, then rerun the generator.
 6. **Fill in** every item in the output's `todo` list, and remove each `TODO(codegen)` marker.
-7. **Verify**: `node $SKILL/scripts/check-tokens.mjs <created and edited files>` must exit 0. Fix every violation. Then run the repo's own lint and typecheck, plus the tests if you generated any.
+7. **Verify**: `node $SKILL/scripts/check-tokens.mjs <created, modified and edited files>` must exit 0. Fix every violation. Then run the repo's own lint and typecheck, plus the tests if you generated any.
 
 ## Styling in one line
 
