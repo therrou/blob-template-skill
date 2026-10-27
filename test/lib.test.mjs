@@ -126,3 +126,28 @@ test('elementVars: notes for landmarks and headings, none for article', () => {
   assert.match(note('ul'), /li children/);
   assert.equal(note('article'), '');
 });
+
+test('parseName also produces snake and constant', () => {
+  const n = parseName('userCard');
+  assert.equal(n.snake, 'user_card');
+  assert.equal(n.constant, 'USER_CARD');
+});
+
+test('render calls built-in and env helpers with one context path', () => {
+  const ctx = { title: 'Order Summary', name: { raw: 'x' } };
+  assert.equal(render('{{kebab title}}|{{constant title}}|{{lower title}}', ctx), 'order-summary|ORDER_SUMMARY|order summary');
+  assert.equal(render('{{shout title}}', ctx, 't', { helpers: { shout: (v) => `${v}!` } }), 'Order Summary!');
+  assert.throws(() => render('{{nope title}}', ctx), /Unknown template helper "nope"/);
+  assert.throws(() => render('{{kebab missing}}', ctx), /Unknown template variable "missing"/);
+});
+
+test('render inserts partials, nested, and rejects cycles', () => {
+  const parts = { a: 'A[{{> b}}]', b: 'B{{x}}', loop: '{{> loop}}' };
+  const env = { partial: (ref) => ({ text: parts[ref], source: ref, env }) };
+  assert.equal(render('<{{> a}}>', { x: 1 }, 't', env), '<A[B1]>');
+  assert.throws(() => render('{{> loop}}', {}, 't', env), /Partial cycle: loop -> loop/);
+});
+
+test('helper syntax never touches JSX object literals', () => {
+  assert.equal(render("<p style={{ color: 'red' }} data={{a, b}} />", {}), "<p style={{ color: 'red' }} data={{a, b}} />");
+});

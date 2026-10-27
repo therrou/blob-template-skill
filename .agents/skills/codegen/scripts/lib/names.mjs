@@ -13,7 +13,8 @@ export function toWords(input) {
 
 export function nameCases(words) {
   const pascal = words.map((w) => w[0].toUpperCase() + w.slice(1)).join('');
-  return { pascal, camel: pascal[0].toLowerCase() + pascal.slice(1), kebab: words.join('-') };
+  const snake = words.join('_');
+  return { pascal, camel: pascal[0].toLowerCase() + pascal.slice(1), kebab: words.join('-'), snake, constant: snake.toUpperCase() };
 }
 
 // `strip` removes a redundant leading/trailing word, e.g. "useToggle" -> "toggle"
