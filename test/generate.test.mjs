@@ -87,7 +87,8 @@ test('--dry-run plans files without writing', () => {
   const { status, json } = run(root, 'react', 'context', '--name', 'ThemeContext', '--dry-run');
   assert.equal(status, 0);
   assert.equal(json.dryRun, true);
-  assert.deepEqual(json.files, ['contexts/theme-context.tsx']);
+  assert.deepEqual(json.created, ['contexts/theme-context.tsx']);
+  assert.deepEqual(json.modified, []);
   assert.equal(fs.existsSync(path.join(root, 'contexts')), false);
 });
 

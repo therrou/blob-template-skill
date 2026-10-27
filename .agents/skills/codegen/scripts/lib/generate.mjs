@@ -250,25 +250,38 @@ export async function plan({ skillDir, root, pack, generator, options }) {
   return { files, skipped, todo };
 }
 
-// All-or-nothing: refuse if any target exists; roll back on a mid-write failure.
+// All-or-nothing: refuse if any create target exists or a modified file changed since planning;
+// on a mid-write failure, remove what was created and restore what was modified.
 export function write(files) {
-  const conflicts = files.filter((f) => fs.existsSync(f.abs)).map((f) => f.path);
+  const conflicts = files.filter((f) => f.kind === 'create' && fs.existsSync(f.abs)).map((f) => f.path);
   if (conflicts.length) {
     throw new CodegenError('Target files already exist; nothing was written. Reuse/extend them or pick another name.', {
       conflicts,
     });
   }
-  const written = [];
+  for (const f of files) {
+    if (f.kind === 'modify' && (!fs.existsSync(f.abs) || fs.readFileSync(f.abs, 'utf8') !== f.before)) {
+      throw new CodegenError(`${f.path} changed while generating; nothing was written.`);
+    }
+  }
+  const done = [];
   const createdDirs = [];
   try {
     for (const f of files) {
-      for (let dir = path.dirname(f.abs); !fs.existsSync(dir); dir = path.dirname(dir)) createdDirs.push(dir);
-      fs.mkdirSync(path.dirname(f.abs), { recursive: true });
-      fs.writeFileSync(f.abs, f.content, { flag: 'wx' });
-      written.push(f.abs);
+      if (f.kind === 'modify') {
+        fs.writeFileSync(f.abs, f.content);
+      } else {
+        for (let dir = path.dirname(f.abs); !fs.existsSync(dir); dir = path.dirname(dir)) createdDirs.push(dir);
+        fs.mkdirSync(path.dirname(f.abs), { recursive: true });
+        fs.writeFileSync(f.abs, f.content, { flag: 'wx' });
+      }
+      done.push(f);
     }
   } catch (err) {
-    for (const file of written) fs.rmSync(file, { force: true });
+    for (const f of done.reverse()) {
+      if (f.kind === 'modify') fs.writeFileSync(f.abs, f.before);
+      else fs.rmSync(f.abs, { force: true });
+    }
     for (const dir of [...new Set(createdDirs)].sort((a, b) => b.length - a.length)) {
       try {
         fs.rmdirSync(dir);

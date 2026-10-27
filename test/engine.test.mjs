@@ -1,8 +1,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
 import path from 'node:path';
 
-import { plan } from '../.agents/skills/codegen/scripts/lib/generate.mjs';
+import { plan, write } from '../.agents/skills/codegen/scripts/lib/generate.mjs';
 import { installCommand, missingDependencies } from '../.agents/skills/codegen/scripts/lib/deps.mjs';
 import { makeRepo, makeSkill } from './helpers.mjs';
 
@@ -233,4 +234,27 @@ test('custom returns changes, sees planned files, and cannot leave the root', as
   assert.deepEqual((await planWith(mod(ok))).files.map((f) => [f.path, f.content]), [['out/a.ts', 'A'], ['out/b.ts', 'Athing']]);
   await assert.rejects(planWith(mod("export default () => [{ path: '/../evil.ts', content: '' }];")), /outside the repo root/);
   await assert.rejects(planWith(mod('export default () => null;')), /custom m\.mjs must return an array/);
+});
+
+test('a conflicting add leaves a planned modify unwritten', async () => {
+  const root = makeRepo({ files: { 'out/index.ts': 'x\n', 'out/thing.ts': 'taken' } });
+  const { files } = await plan({ skillDir: makeSkill({ actions: [append()] }), root, pack: 't', generator: 'g', options: { name: 'thing' } });
+  assert.throws(() => write(files), (e) => e.details.conflicts[0] === 'out/thing.ts');
+  assert.equal(fs.readFileSync(path.join(root, 'out/index.ts'), 'utf8'), 'x\n');
+});
+
+test('a mid-write failure restores modified files', async () => {
+  const root = makeRepo({ files: { 'out/index.ts': 'x\n' } });
+  const { files } = await plan({ skillDir: makeSkill({ files: [], actions: [append(), { type: 'add', path: 'z/y.ts', text: '' }] }), root, pack: 't', generator: 'g', options: { name: 'thing' } });
+  fs.writeFileSync(path.join(root, 'out/z'), 'a file where a dir must go');
+  assert.throws(() => write(files));
+  assert.equal(fs.readFileSync(path.join(root, 'out/index.ts'), 'utf8'), 'x\n');
+});
+
+test('a file changed between plan and write is refused', async () => {
+  const root = makeRepo({ files: { 'out/index.ts': 'x\n' } });
+  const { files } = await plan({ skillDir: makeSkill({ files: [], actions: [append()] }), root, pack: 't', generator: 'g', options: { name: 'thing' } });
+  fs.writeFileSync(path.join(root, 'out/index.ts'), 'edited\n');
+  assert.throws(() => write(files), /out\/index\.ts changed while generating; nothing was written/);
+  assert.equal(fs.readFileSync(path.join(root, 'out/index.ts'), 'utf8'), 'edited\n');
 });

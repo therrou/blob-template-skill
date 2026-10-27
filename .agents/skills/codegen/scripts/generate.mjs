@@ -61,20 +61,23 @@ async function main() {
   }
   const root = path.resolve(genOptions.root ?? process.cwd());
   const result = await plan({ skillDir, root, pack, generator, options: genOptions });
-  const files = result.files.map((f) => f.path);
+  const created = result.files.filter((f) => f.kind === 'create').map((f) => f.path);
+  const modified = result.files.filter((f) => f.kind === 'modify').map((f) => f.path);
   const overridden = result.files.filter((f) => f.overridden).map((f) => f.path);
+  const summary = { created, modified, skipped: result.skipped, overridden, todo: result.todo };
 
-  if (genOptions['dry-run']) return print({ ok: true, dryRun: true, files, overridden, todo: result.todo });
+  if (genOptions['dry-run']) {
+    const changes = result.files.filter((f) => f.kind === 'modify').map((f) => ({ path: f.path, action: f.action, text: f.text ?? '' }));
+    return print({ ok: true, dryRun: true, ...summary, changes });
+  }
 
   write(result.files);
   print({
     ok: true,
-    created: files,
-    overridden,
-    todo: result.todo,
+    ...summary,
     next: [
       'Resolve every todo item (remove each TODO(codegen) marker).',
-      'Run check-tokens.mjs on the created and edited files, then the repo\'s lint/typecheck.',
+      'Run check-tokens.mjs on the created and modified files, then the repo\'s lint/typecheck.',
     ],
   });
 }
