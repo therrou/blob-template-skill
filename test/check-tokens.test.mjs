@@ -98,3 +98,29 @@ test('reads v3 colors from tailwind.config.js including nested DEFAULT keys', ()
   assert.deepEqual(json.theme.colorTokens.sort(), ['primary', 'primary-foreground']);
   assert.deepEqual(rules(json), ['palette-color:text-gray-500']);
 });
+
+test('css-in-js mode flags literals in styled templates and sx, allows theme references', () => {
+  const root = repo({
+    'package.json': JSON.stringify({ dependencies: { 'styled-components': '^6' } }),
+    'src/badge.tsx': [
+      'const Root = styled.span`',
+      '  color: #ff0000;',
+      '  padding: 12px;',
+      '  margin: 0;',
+      '  border: 1px solid ${({ theme }) => theme.colors.border};',
+      '  font-size: ${({ theme }) => theme.fontSizes.sm};',
+      '`;',
+      '<Box sx={{ fontWeight: 700, color: theme.palette.primary.main }} />',
+      "const url = '#top';",
+    ].join('\n'),
+  });
+  const { json } = check(root, 'src');
+  assert.equal(json.mode, 'css-in-js');
+  assert.deepEqual(json.violations.map((v) => [v.line, v.rule]), [[2, 'css-color-literal'], [3, 'css-length-literal'], [8, 'css-font-literal']]);
+});
+
+test('tailwind and plain repos keep the tailwind rules', () => {
+  const { json } = check(repo({ 'package.json': '{}', 'src/a.tsx': '<div className="p-[13px]" />' }), 'src');
+  assert.equal(json.mode, 'tailwind');
+  assert.equal(json.violations[0].rule, 'arbitrary-value');
+});

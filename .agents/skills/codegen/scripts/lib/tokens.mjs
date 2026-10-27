@@ -2,6 +2,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 
+import { resolveProfile } from './profile.mjs';
+
 const IGNORED_DIRS = new Set(['node_modules', '.git', '.next', 'dist', 'build', 'out', 'coverage', '.turbo', 'storybook-static']);
 const SCANNED_EXTENSIONS = new Set(['.tsx', '.jsx', '.ts', '.js', '.mjs', '.vue', '.svelte', '.astro', '.html', '.liquid', '.mdx', '.cshtml']);
 
@@ -125,7 +127,81 @@ function isPaletteToken(match, colors) {
   return m && colors.has(m[0]);
 }
 
-export function checkFile(file, content, theme) {
+// CSS-in-JS: styled/css template literals and sx/css/style or styled(...)({ … }) objects.
+const TEMPLATE_OPEN = /\b(?:styled(?:\.\w+|\([^)]*\))(?:<[^`]*>)?|css|keyframes|createGlobalStyle)`/;
+const OBJECT_OPEN = /\b(?:sx|css|style)=\{\{|\bstyled\([^)]*\)\(\{/;
+const THEME_REF = /\btheme\b/;
+const CSS_RULES = [
+  {
+    rule: 'css-font-literal',
+    message: 'Hard-coded font size or weight: use a theme value (theme.typography / theme.fontSizes).',
+    regex: /\b(?:font-size|fontSize|font-weight|fontWeight)\s*:\s*['"]?\d[\w.]*/,
+  },
+  {
+    rule: 'css-color-literal',
+    message: 'Hard-coded color: use a theme color.',
+    regex: /#[0-9a-fA-F]{3,8}\b|\b(?:rgba?|hsla?|oklch|oklab)\([^)]*\)/,
+  },
+  {
+    rule: 'css-length-literal',
+    message: 'Hard-coded length: use theme spacing or sizes (0 and 1px are fine).',
+    regex: /(?<![\w.-])\d*\.?\d+(?:px|rem|em)\b/g,
+    allow: (m) => m === '1px' || Number.parseFloat(m) === 0,
+  },
+];
+
+// Splits the styled parts of each line into declarations; a declaration that references `theme` is fine.
+function cssInJsViolations(file, lines) {
+  const violations = [];
+  let inTemplate = false;
+  let objectDepth = 0;
+  lines.forEach((text, i) => {
+    let scope = '';
+    if (inTemplate) {
+      const end = text.indexOf('`');
+      scope = end === -1 ? text : text.slice(0, end);
+      if (end !== -1) inTemplate = false;
+    } else if (objectDepth > 0) {
+      scope = text;
+    } else {
+      const template = TEMPLATE_OPEN.exec(text);
+      const object = OBJECT_OPEN.exec(text);
+      if (template) {
+        const rest = text.slice(template.index + template[0].length);
+        const end = rest.indexOf('`');
+        scope = end === -1 ? rest : rest.slice(0, end);
+        inTemplate = end === -1;
+      } else if (object) {
+        scope = text.slice(object.index);
+      }
+    }
+    if (objectDepth > 0 || OBJECT_OPEN.test(scope)) {
+      for (const ch of scope) objectDepth += ch === '{' ? 1 : ch === '}' ? -1 : 0;
+      objectDepth = Math.max(objectDepth, 0);
+    }
+    if (!scope || ALLOW_COMMENT.test(text) || (i > 0 && ALLOW_COMMENT.test(lines[i - 1]))) return;
+    for (const declaration of scope.split(/[;,]/)) {
+      if (THEME_REF.test(declaration)) continue;
+      for (const { rule, message, regex, allow } of CSS_RULES) {
+        const found = regex.global ? [...declaration.matchAll(regex)].map((m) => m[0]) : [regex.exec(declaration)?.[0]].filter(Boolean);
+        const match = found.find((m) => !allow?.(m));
+        if (match) {
+          violations.push({ file, line: i + 1, rule, match, message });
+          break;
+        }
+      }
+    }
+  });
+  return violations;
+}
+
+export function checkFile(file, content, theme, mode = 'tailwind') {
+  if (mode === 'css-in-js') {
+    const todo = RULES.find((r) => r.rule === 'codegen-todo');
+    const lines = content.split('\n');
+    const todos = lines.flatMap((text, i) => [...text.matchAll(todo.regex)].map(([match]) => ({ file, line: i + 1, rule: todo.rule, match, message: todo.message })));
+    return [...cssInJsViolations(file, lines), ...todos].sort((a, b) => a.line - b.line);
+  }
   const lines = content.split('\n');
   const violations = [];
   lines.forEach((text, i) => {
@@ -144,13 +220,17 @@ export function checkFile(file, content, theme) {
 }
 
 export async function checkTokens(root, targets) {
+  const { dims } = resolveProfile(root);
+  const mode = ['styled-components', 'emotion'].includes(dims.styling.value) ? 'css-in-js' : 'tailwind';
   const theme = await loadTheme(root);
+  if (mode === 'css-in-js') theme.warnings = theme.warnings.filter((w) => !w.startsWith('No Tailwind theme found'));
   const files = targets.flatMap((t) => walk(path.resolve(root, t)));
   const violations = files.flatMap((abs) =>
-    checkFile(path.relative(root, abs).split(path.sep).join('/'), fs.readFileSync(abs, 'utf8'), theme),
+    checkFile(path.relative(root, abs).split(path.sep).join('/'), fs.readFileSync(abs, 'utf8'), theme, mode),
   );
   return {
     ok: violations.length === 0,
+    mode,
     checkedFiles: files.length,
     theme: { sources: theme.sources, colorTokens: [...theme.colors].sort(), semantic: theme.semantic },
     warnings: theme.warnings,
