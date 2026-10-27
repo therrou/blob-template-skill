@@ -47,12 +47,35 @@ Guarantees:
 - Missing packages or shadcn primitives are an error with `missing`, `missingUi` and an `install` command; nothing is written.
 - It detects `src/`, Vitest or Jest, the Storybook framework, the Next major version (sync or async `params`), the shadcn `components.json` aliases, `cn()`, and Radix Slot.
 
+## Supported stacks
+
+The generator detects the stack first (`generate.mjs --detect`) and picks template variants from it. Every output includes this `profile`, with where each value came from (`detected`, `default`, `config`, `flag`).
+
+| Dimension | Values | Detected from |
+|---|---|---|
+| `app` | `next-app`, `next-pages`, `react-spa` | `next` in deps plus `app/` or `pages/` (both → `next-app`) |
+| `next` | `13`, `14`, `15`, `16` (16 = 16+) | installed `next` major |
+| `react` | `18`, `19` | installed `react` major (18 → `forwardRef`) |
+| `styling` | `tailwind-3`, `tailwind-4`, `styled-components`, `emotion`, `plain` | `tailwindcss` major, else `styled-components`, else `@emotion/*` (MUI included), else `plain` |
+| `primitives` | `radix`, `base`, `none` | `components.json` `style` prefix (`base-*` → Base UI `render` prop instead of `asChild`) |
+| `cn` | an import path or `none` | the `cn` import in existing `components/ui/*`, then `components.json`, then `lib/utils` |
+| `zod`, `table` | `3`/`4`, `8`/`9` | installed majors (used by upcoming generators) |
+| `srcDir` | `true`, `false` | `src/` exists |
+
+- Versions come from `node_modules` (walking up for monorepos), else the `package.json` range. A library that isn't installed counts as its newest supported version (source `default`).
+- Older versions (React 17, Next 12, Tailwind 2, React Aria–flavoured shadcn) are refused by the generators that depend on them, with the supported values in the message.
+- Override detection with `.codegen/config.json` (`{ "profile": { "app": "next-pages" } }`) or `--profile app=next-pages,react=18`. The flag wins over the file, which wins over detection. Unknown keys or values are errors.
+
 ## Template syntax
 
 `{{name.pascal}}`, `{{name.camel}}`, `{{name.kebab}}`, `{{name.snake}}`, `{{name.constant}}`, plus `{{#if x}}…{{else}}…{{/if}}` and `{{#unless x}}`. A block tag alone on a line removes that line. Unknown variables are errors.
 
 - **Helpers**: `{{kebab title}}` calls a helper with one variable. Built-ins: `pascal`, `camel`, `kebab`, `snake`, `constant`, `lower`, `upper`. A pack adds its own in `packs/<pack>/helpers.mjs` and a repo in `.codegen/helpers.mjs` (`export default { name: (value) => string }`). Repo helpers win over pack helpers, which win over built-ins.
 - **Partials**: `{{> name}}` inserts `packs/<pack>/templates/_partials/<name>.tpl`, and `{{> @react/name}}` borrows one from another pack. A template always uses the partials and helpers of the pack that owns it, even when another pack borrows it. A repo overrides a partial like any template: `.codegen/templates/<pack>/_partials/<name>.tpl`. Mark anything the agent must finish with `TODO(codegen): <instruction>`. The generator reports these markers, and `check-tokens` fails until they're gone.
+
+## Token rules for CSS-in-JS
+
+In styled-components and Emotion repos, `check-tokens` runs in `css-in-js` mode. Inside styled template literals (`styled.x\`…\``, `css\`…\``) and style objects (`sx={{…}}`, `css={{…}}`, `style={{…}}`, `styled(x)({…})`), it flags hard-coded colors, lengths other than `0` and `1px`, and numeric font sizes and weights. A declaration that references `theme` is fine. It checks that the theme is used, not that the key exists in the theme.
 
 ## Enforcing it outside the agent
 
@@ -104,7 +127,9 @@ Recommended existing ESLint rules that match the conventions:
 | `append` | `{ "type": "append", "path": "index.ts", "template": "barrel/export.ts.tpl", "skipIfMissing": true }` | Adds a line at the end of the file, or after the first `pattern` match. `separator` (default: a newline) goes between the match and the text, and only applies to pattern inserts; at the end of the file the text is always added as whole lines. With `unique` (default `true`) it skips text that is already there. |
 | `custom` | `{ "type": "custom", "module": "register-route.mjs" }` | Runs `packs/<pack>/actions/register-route.mjs`: `export default (ctx, { read, exists, render }) => [{ path, content }]`. It returns changes and never writes, so dry-run and rollback still apply. |
 
-- Every action takes `when` (a context key that must be true).
+- Every action and `files` entry takes `when`: a context key that must be true, or a profile condition such as `{ "styling": ["styled-components", "emotion"] }` or `{ "app": "!next-pages" }` (every key must match; `!` excludes a value).
+- A generator or an option can declare `supports` with the same shape (`"supports": { "app": ["!next-pages"] }`). Outside it, the run is refused with the supported values. `out` can be `[{ "when": {…}, "out": "pages" }, { "out": "app" }]` (first match wins), and a `requires` entry can be `{ "package": "@base-ui/react", "when": { "primitives": "base" } }`.
+- Templates see `profile.<dim>`, `profileIs.<dim>.<value>`, `mui` and `cssInJs`.
 - `path` is relative to the generator's output folder. A leading `/` makes it relative to the repo root, and its first folder follows the repo's `src/` layout (`/app/layout.tsx` → `src/app/layout.tsx`).
 - Content comes from exactly one of `template` (a file, which repos can override) or `text` (inline).
 - `modify` and `append` fail when the file or the pattern is missing. `skipIfMissing` skips instead.

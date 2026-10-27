@@ -3,6 +3,20 @@
 Update a repo's copy by replacing `.agents/skills/codegen/` with the boilerplate version.
 Repo overrides live in `.codegen/templates/` and are never touched by an update.
 
+## 0.4.0 — 2026-10-27
+
+**Breaking:**
+- `server-action` now generates `(prevState, formData)`, the signature `useActionState` expects.
+- `--as-child` is refused in CSS-in-JS repos (use `as`).
+- `form-field` is refused with Base UI primitives or CSS-in-JS styling.
+- Every output (and every error after detection) includes `profile`.
+
+- Project profile: `generate.mjs --detect` shows the detected app type (Next App Router, Pages Router, React SPA), Next and React versions, styling, shadcn primitives, `cn` import, Zod and TanStack Table versions. Override with `.codegen/config.json` or `--profile key=value,…`. Versions outside the support matrix are refused with the supported values.
+- pack.json: `when` and `supports` accept profile conditions (with `!value` exclusion), `out` can depend on the profile, `requires` entries can be conditional.
+- Components: `forwardRef` on React 18; Base UI `render` prop via `useRender` (`@base-ui/react`) when `components.json` uses a `base-*` style; a styled-components / Emotion / MUI variant with transient `$variant`/`$size` props; `cn` imported the way existing `components/ui` files do.
+- Next Pages Router: `route` writes `pages/<route>.tsx`, `api-route` writes `pages/api/<route>.ts`; App Router–only flags and `server-action` are refused there.
+- `check-tokens` gains a `css-in-js` mode and reports `mode`.
+
 ## 0.3.0 — 2026-10-27
 
 **Breaking:** `--dry-run` output renames `files` to `created`, and adds `modified`, `skipped` and `changes`. Normal runs also report `modified` and `skipped`.

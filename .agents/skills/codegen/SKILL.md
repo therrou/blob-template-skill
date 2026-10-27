@@ -11,7 +11,9 @@ Paths below are relative to the repo root: `SKILL=.agents/skills/codegen`.
 
 ## Workflow
 
-1. **Pick the pack.** If `next` is a dependency in `package.json`, use `next`. Otherwise, if `react` is a dependency, use `react`. For any other stack, there is no pack yet: write the code by hand following the closest `CONVENTIONS.md`.
+1. **Detect the stack, then pick the pack.** Run `node $SKILL/scripts/generate.mjs --detect` and read `profile`: app type, Next and React versions, styling (Tailwind 3/4, styled-components, Emotion/MUI, plain), shadcn primitives (Radix/Base UI), `cn` import, Zod and TanStack Table versions.
+   - Use `next` when `profile.app` is `next-app` or `next-pages`, otherwise `react`. For any other stack there is no pack yet: write the code by hand following the closest `CONVENTIONS.md`.
+   - If a value is wrong (e.g. a migration in progress), set it in `.codegen/config.json` (`{ "profile": { "styling": "emotion" } }`) and tell the user, or pass `--profile key=value` for one run.
 2. **Reuse check** (components only). Search `components/ui/`, the existing component folders, and any design-system package in `package.json` for something that already does the job. If you find one, reuse or extend it, tell the user, and stop. New components compose existing primitives; they don't re-style raw HTML.
 3. **Read the conventions**: `$SKILL/packs/<pack>/CONVENTIONS.md`. For next, also read the react one.
 4. **Choose the generator and options**: `node $SKILL/scripts/generate.mjs --list <pack>`.
@@ -26,6 +28,7 @@ Paths below are relative to the repo root: `SKILL=.agents/skills/codegen`.
    - Unsure where the files will land? Run with `--dry-run` first.
    - The output lists `created`, `modified` (existing files the generator edited, such as a barrel) and `skipped`.
    - An error from a `modify` or `append` step means the target file isn't in the shape the generator expects. Tell the user; don't hand-edit around it.
+   - An error saying something "is not supported" means the stack or option is outside the support matrix. Tell the user; don't hand-write around it.
    - Output of `ok: false` with `conflicts` means the files already exist. Reuse them or choose another name. Never delete files in order to regenerate them.
    - Output of `ok: false` with `missing` / `missingUi` means a package or shadcn primitive is missing. Show the user the `install` command and ask before running it, then rerun the generator.
 6. **Fill in** every item in the output's `todo` list, and remove each `TODO(codegen)` marker.
@@ -33,7 +36,7 @@ Paths below are relative to the repo root: `SKILL=.agents/skills/codegen`.
 
 ## Styling in one line
 
-Tailwind with **semantic theme tokens only**. Read the theme before writing classes. Don't use arbitrary values (`p-[13px]`), color literals, or raw palette colors (`bg-blue-500`) when a semantic token exists. Details are in `packs/react/CONVENTIONS.md`. For a justified exception, put `tokens-allow: <reason>` in a comment on the same line or the line above.
+In CSS-in-JS repos (styled-components, Emotion, MUI): **`theme` values only**, no hard-coded colors, lengths or font sizes. Otherwise Tailwind with **semantic theme tokens only**. Read the theme before writing classes. Don't use arbitrary values (`p-[13px]`), color literals, or raw palette colors (`bg-blue-500`) when a semantic token exists. Details are in `packs/react/CONVENTIONS.md`. For a justified exception, put `tokens-allow: <reason>` in a comment on the same line or the line above.
 
 ## Repo overrides
 
