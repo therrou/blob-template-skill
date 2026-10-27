@@ -18,7 +18,8 @@
         { "template": "component/index.ts.tpl", "path": "{{name.kebab}}/index.ts" },
         { "template": "component/component.test.tsx.tpl", "path": "{{name.kebab}}/{{name.kebab}}.test.tsx", "when": "withTest" },
         { "template": "component/component.stories.tsx.tpl", "path": "{{name.kebab}}/{{name.kebab}}.stories.tsx", "when": "withStory" }
-      ]
+      ],
+      "actions": [{ "type": "append", "path": "index.ts", "template": "barrel/export.ts.tpl", "skipIfMissing": true }]
     },
     "hook": {
       "description": "Custom hook (use-thing.ts). Pass the name with or without the use prefix.",
@@ -75,7 +76,8 @@
         { "template": "form-field/form-field.tsx.tpl", "path": "{{name.kebab}}/{{name.kebab}}.tsx" },
         { "template": "form-field/index.ts.tpl", "path": "{{name.kebab}}/index.ts" },
         { "template": "form-field/form-field.test.tsx.tpl", "path": "{{name.kebab}}/{{name.kebab}}.test.tsx", "when": "withTest" }
-      ]
+      ],
+      "actions": [{ "type": "append", "path": "index.ts", "template": "barrel/export.ts.tpl", "skipIfMissing": true }]
     }
   }
 }

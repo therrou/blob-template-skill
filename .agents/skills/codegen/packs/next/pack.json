@@ -18,7 +18,8 @@
         { "template": "@react/component/index.ts.tpl", "path": "{{name.kebab}}/index.ts" },
         { "template": "@react/component/component.test.tsx.tpl", "path": "{{name.kebab}}/{{name.kebab}}.test.tsx", "when": "withTest" },
         { "template": "@react/component/component.stories.tsx.tpl", "path": "{{name.kebab}}/{{name.kebab}}.stories.tsx", "when": "withStory" }
-      ]
+      ],
+      "actions": [{ "type": "append", "path": "index.ts", "template": "@react/barrel/export.ts.tpl", "skipIfMissing": true }]
     },
     "client-component": {
       "description": "Client Component ('use client') for state, effects, event handlers or browser APIs. Keep it a small leaf.",
@@ -37,7 +38,8 @@
         { "template": "@react/component/index.ts.tpl", "path": "{{name.kebab}}/index.ts" },
         { "template": "@react/component/component.test.tsx.tpl", "path": "{{name.kebab}}/{{name.kebab}}.test.tsx", "when": "withTest" },
         { "template": "@react/component/component.stories.tsx.tpl", "path": "{{name.kebab}}/{{name.kebab}}.stories.tsx", "when": "withStory" }
-      ]
+      ],
+      "actions": [{ "type": "append", "path": "index.ts", "template": "@react/barrel/export.ts.tpl", "skipIfMissing": true }]
     },
     "hook": {
       "description": "Custom hook for Client Components (use-thing.ts).",
@@ -121,7 +123,8 @@
         { "template": "@react/form-field/form-field.tsx.tpl", "path": "{{name.kebab}}/{{name.kebab}}.tsx" },
         { "template": "@react/form-field/index.ts.tpl", "path": "{{name.kebab}}/index.ts" },
         { "template": "@react/form-field/form-field.test.tsx.tpl", "path": "{{name.kebab}}/{{name.kebab}}.test.tsx", "when": "withTest" }
-      ]
+      ],
+      "actions": [{ "type": "append", "path": "index.ts", "template": "@react/barrel/export.ts.tpl", "skipIfMissing": true }]
     }
   }
 }

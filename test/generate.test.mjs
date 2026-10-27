@@ -335,3 +335,23 @@ test('an override that ignores a flag the skill template handles is refused, wri
   assert.match(json.error, /override .*component\/component\.tsx\.tpl ignores --variants/);
   assert.equal(fs.existsSync(path.join(root, 'components')), false);
 });
+
+test('component registers itself in an existing components barrel, idempotently', () => {
+  const root = makeRepo({ files: { 'components/index.ts': "export * from './a';\n" } });
+  const { json } = run(root, 'next', 'component', '--name', 'UserCard', '--element', 'article');
+  assert.deepEqual(json.modified, ['components/index.ts']);
+  assert.equal(read(root, 'components/index.ts'), "export * from './a';\nexport * from './user-card';\n");
+});
+
+test('no barrel, no change: the append is reported as skipped', () => {
+  const { json } = run(makeRepo(), 'react', 'component', '--name', 'UserCard', '--element', 'article');
+  assert.deepEqual(json.modified, []);
+  assert.deepEqual(json.skipped, [{ path: 'components/index.ts', action: 'append', reason: 'missing' }]);
+});
+
+test('a repo override restyles the barrel line', () => {
+  const root = makeRepo({ files: { 'components/index.ts': '', '.codegen/templates/react/barrel/export.ts.tpl': 'export * from "./{{name.kebab}}"\n' } });
+  const { json } = run(root, 'react', 'component', '--name', 'UserCard', '--element', 'article');
+  assert.equal(read(root, 'components/index.ts'), 'export * from "./user-card"\n');
+  assert.ok(json.overridden.includes('components/index.ts'));
+});
