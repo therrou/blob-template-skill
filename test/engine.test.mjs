@@ -299,3 +299,10 @@ test('templates see profile and profileIs', async () => {
   const gen = { template: '{{profile.styling}}|{{#if profileIs.react.18}}r18{{/if}}' };
   assert.equal((await planWith(gen, { options: { profile: 'react=18' } })).files[0].content, 'plain|r18');
 });
+
+test('a !value condition excludes one value in when and supports', async () => {
+  const gen = { files: [{ template: 'x.tpl', path: 'a.ts', when: { app: '!next-pages' } }, { template: 'x.tpl', path: 'b.ts', when: { app: 'next-pages' } }], supports: { styling: ['!emotion'] } };
+  assert.deepEqual((await planWith(gen)).files.map((f) => f.path), ['out/a.ts']);
+  assert.deepEqual((await planWith(gen, { options: { profile: 'app=next-pages' } })).files.map((f) => f.path), ['out/b.ts']);
+  await assert.rejects(planWith(gen, { options: { profile: 'styling=emotion' } }), /does not support styling emotion \(supported: anything but emotion\)/);
+});

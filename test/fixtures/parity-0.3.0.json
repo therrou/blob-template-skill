@@ -144,7 +144,7 @@
   "next/server-action": [
     {
       "path": "actions/x-card.ts",
-      "content": "'use server';\n\nexport type XCardState = { ok: true } | { ok: false; error: string };\n\nexport async function xCardAction(formData: FormData): Promise<XCardState> {\n  // TODO(codegen): validate formData with the repo's schema library; never trust client input\n  // TODO(codegen): check authentication and authorization before mutating\n  // TODO(codegen): perform the mutation, then revalidatePath()/revalidateTag() what changed\n  void formData;\n  return { ok: true };\n}\n"
+      "content": "'use server';\n\nexport type XCardState = { ok: true } | { ok: false; error: string };\n\n// Signature fits useActionState: const [state, formAction, pending] = useActionState(xCardAction, initialState)\nexport async function xCardAction(prevState: XCardState, formData: FormData): Promise<XCardState> {\n  // TODO(codegen): validate formData with the repo's schema library; never trust client input\n  // TODO(codegen): check authentication and authorization before mutating\n  // TODO(codegen): perform the mutation, then revalidatePath()/revalidateTag() what changed\n  void prevState;\n  void formData;\n  return { ok: true };\n}\n"
     }
   ],
   "next/form-field": [

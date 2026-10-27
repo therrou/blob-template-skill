@@ -12,7 +12,7 @@ import {
   resolveAliasDir,
   resolveOut,
 } from './detect.mjs';
-import { ensureInside, matches, runActions } from './actions.mjs';
+import { describeAllowed, ensureInside, matches, runActions, valueAllowed } from './actions.mjs';
 import { installCommand, missingDependencies } from './deps.mjs';
 import { elementVars } from './elements.mjs';
 import { parseName } from './names.mjs';
@@ -114,7 +114,7 @@ function checkSupports(supports, profile, describe) {
         `${dim} ${value} is not supported (supported: ${DIMENSIONS[dim].values.join(', ')}). Set it in .codegen/config.json if detection is wrong.`,
       );
     }
-    if (!allowed.includes(value)) throw new CodegenError(`${describe(dim, value)} (supported: ${allowed.join(', ')}).`);
+    if (!valueAllowed(allowed, value)) throw new CodegenError(`${describe(dim, value)} (supported: ${describeAllowed(allowed)}).`);
   }
 }
 
@@ -195,6 +195,9 @@ async function planWithProfile({ skillDir, root, pack, generator, options, manif
 
   if (gen.nameKind === 'route') {
     const { name, ...route } = parseRoute(options.name);
+    if (ctx.profile.app === 'next-pages' && /(^|\/)[(@]/.test(route.route)) {
+      throw new CodegenError('Route groups and @slots are App Router only.');
+    }
     Object.assign(ctx, route, { name });
   } else {
     ctx.name = parseName(options.name, gen.strip);

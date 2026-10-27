@@ -78,15 +78,16 @@
     },
     "route": {
       "description": "App Router segment: page.tsx plus optional layout/loading/error. --name is the route path, e.g. blog/[slug] or (marketing)/about.",
-      "out": "app",
+      "out": [{ "when": { "app": "next-pages" }, "out": "pages" }, { "out": "app" }],
       "nameKind": "route",
       "options": {
-        "with-layout": { "type": "boolean", "description": "Add layout.tsx." },
-        "with-loading": { "type": "boolean", "description": "Add loading.tsx (Suspense fallback for the segment)." },
-        "with-error": { "type": "boolean", "description": "Add error.tsx (client error boundary)." }
+        "with-layout": { "type": "boolean", "supports": { "app": ["!next-pages"] }, "description": "Add layout.tsx." },
+        "with-loading": { "type": "boolean", "supports": { "app": ["!next-pages"] }, "description": "Add loading.tsx (Suspense fallback for the segment)." },
+        "with-error": { "type": "boolean", "supports": { "app": ["!next-pages"] }, "description": "Add error.tsx (client error boundary)." }
       },
       "files": [
-        { "template": "route/page.tsx.tpl", "path": "{{route}}/page.tsx" },
+        { "template": "route/page.tsx.tpl", "path": "{{route}}/page.tsx", "when": { "app": "!next-pages" } },
+        { "template": "pages-route/page.tsx.tpl", "path": "{{route}}.tsx", "when": { "app": "next-pages" } },
         { "template": "route/layout.tsx.tpl", "path": "{{route}}/layout.tsx", "when": "withLayout" },
         { "template": "route/loading.tsx.tpl", "path": "{{route}}/loading.tsx", "when": "withLoading" },
         { "template": "route/error.tsx.tpl", "path": "{{route}}/error.tsx", "when": "withError" }
@@ -94,17 +95,19 @@
     },
     "api-route": {
       "description": "Route Handler (route.ts) under app/api. --name is the path below /api, e.g. users/[id].",
-      "out": "app/api",
+      "out": [{ "when": { "app": "next-pages" }, "out": "pages/api" }, { "out": "app/api" }],
       "nameKind": "route",
       "options": {
-        "with-test": { "type": "boolean", "description": "Add a handler test that calls GET with a Request." }
+        "with-test": { "type": "boolean", "description": "Add a handler test that calls GET with a Request.", "supports": { "app": ["!next-pages"] } }
       },
       "files": [
-        { "template": "api-route/route.ts.tpl", "path": "{{route}}/route.ts" },
+        { "template": "api-route/route.ts.tpl", "path": "{{route}}/route.ts", "when": { "app": "!next-pages" } },
+        { "template": "pages-api/route.ts.tpl", "path": "{{route}}.ts", "when": { "app": "next-pages" } },
         { "template": "api-route/route.test.ts.tpl", "path": "{{route}}/route.test.ts", "when": "withTest" }
       ]
     },
     "server-action": {
+      "supports": { "app": ["!next-pages"] },
       "description": "Server Action module ('use server') for mutations called from forms or client components.",
       "out": "actions",
       "strip": ["action"],

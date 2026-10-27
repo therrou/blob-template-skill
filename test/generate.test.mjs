@@ -450,3 +450,28 @@ test('tailwind + styled-components repo uses tailwind, and the flag switches', (
   run(root, 'react', 'component', '--name', 'B', '--element', 'p', '--profile', 'styling=styled-components');
   assert.match(read(root, 'components/b/b.tsx'), /styled-components/);
 });
+
+test('pages router: route and api-route land in pages/, app-only flags and actions are refused', () => {
+  const root = makeRepo({ deps: { next: '14.2.0', react: '^18' }, dirs: ['pages'] });
+  run(root, 'next', 'route', '--name', 'blog/[slug]');
+  const page = read(root, 'pages/blog/[slug].tsx');
+  assert.match(page, /export default function BlogSlugPage\(/);
+  assert.match(page, /TODO\(codegen\).*getServerSideProps/);
+  run(root, 'next', 'api-route', '--name', 'users/[id]');
+  assert.match(read(root, 'pages/api/users/[id].ts'), /NextApiRequest, res: NextApiResponse/);
+  assert.match(run(root, 'next', 'route', '--name', 'x', '--with-loading').json.error, /--with-loading is not supported with app next-pages/);
+  assert.match(run(root, 'next', 'server-action', '--name', 'save').json.error, /does not support app next-pages/);
+  assert.match(run(root, 'next', 'route', '--name', '(m)/about').json.error, /App Router only/);
+});
+
+test('pages router components carry no RSC notes or use client', () => {
+  const root = makeRepo({ deps: { next: '^15', react: '^19' }, dirs: ['pages'] });
+  run(root, 'next', 'client-component', '--name', 'Toggle', '--element', 'button');
+  assert.doesNotMatch(read(root, 'components/toggle/toggle.tsx'), /use client|Server Component/);
+});
+
+test('server action takes (prevState, formData) for useActionState', () => {
+  const root = makeRepo({ deps: { next: '^16' }, dirs: ['app'] });
+  run(root, 'next', 'server-action', '--name', 'saveProfile');
+  assert.match(read(root, 'actions/save-profile.ts'), /export async function saveProfileAction\(prevState: SaveProfileState, formData: FormData\): Promise<SaveProfileState>/);
+});

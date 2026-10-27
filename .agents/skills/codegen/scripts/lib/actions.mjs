@@ -35,11 +35,25 @@ function compile(action) {
   }
 }
 
-// `when`: a context key that must be truthy, or { dim: value | value[] } matched against the profile.
+// A value list matches when the value is listed, or, for "!x" entries, when it isn't any excluded value.
+export function valueAllowed(list, value) {
+  const wanted = [].concat(list);
+  const excluded = wanted.filter((w) => w.startsWith('!')).map((w) => w.slice(1));
+  const included = wanted.filter((w) => !w.startsWith('!'));
+  return !excluded.includes(value) && (included.length === 0 || included.includes(value));
+}
+
+export function describeAllowed(list) {
+  const wanted = [].concat(list);
+  const included = wanted.filter((w) => !w.startsWith('!'));
+  return included.length ? included.join(', ') : `anything but ${wanted.map((w) => w.slice(1)).join(', ')}`;
+}
+
+// `when`: a context key that must be truthy, or { dim: value | value[] | "!value" } matched against the profile.
 export function matches(condition, ctx) {
   if (condition === undefined) return true;
   if (typeof condition === 'string') return Boolean(ctx[condition]);
-  return Object.entries(condition).every(([dim, want]) => [].concat(want).includes(ctx.profile?.[dim]));
+  return Object.entries(condition).every(([dim, want]) => valueAllowed(want, ctx.profile?.[dim]));
 }
 
 // Runs actions in order against an in-memory view of the files. Nothing touches the disk here.
