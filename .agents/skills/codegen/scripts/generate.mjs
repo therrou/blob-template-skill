@@ -8,6 +8,7 @@ import { fileURLToPath } from 'node:url';
 
 import { CodegenError } from './lib/errors.mjs';
 import { GLOBAL_OPTIONS, checkWritable, listPacks, loadPack, plan, write } from './lib/generate.mjs';
+import { resolveProfile } from './lib/profile.mjs';
 
 const skillDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -52,11 +53,15 @@ function describe(only) {
 
 async function main() {
   const { positional, options } = parseArgs(process.argv.slice(2));
+  if (options.detect) {
+    if (options.root === true || options.profile === true) throw new CodegenError('--root and --profile need a value.');
+    return print({ ok: true, profile: resolveProfile(path.resolve(options.root ?? process.cwd()), options.profile).dims });
+  }
   if (options.list || options.help || positional.length === 0) return print(describe(positional[0]));
 
   const [pack, generator] = positional;
   const { list, help, ...genOptions } = options;
-  for (const key of ['name', 'out', 'root', 'test-runner']) {
+  for (const key of ['name', 'out', 'root', 'test-runner', 'profile']) {
     if (genOptions[key] === true) throw new CodegenError(`--${key} needs a value.`);
   }
   const root = path.resolve(genOptions.root ?? process.cwd());
@@ -64,7 +69,7 @@ async function main() {
   const created = result.files.filter((f) => f.kind === 'create').map((f) => f.path);
   const modified = result.files.filter((f) => f.kind === 'modify').map((f) => f.path);
   const overridden = result.files.filter((f) => f.overridden).map((f) => f.path);
-  const summary = { created, modified, skipped: result.skipped, overridden, todo: result.todo };
+  const summary = { created, modified, skipped: result.skipped, overridden, todo: result.todo, profile: result.profile };
 
   if (genOptions['dry-run']) {
     checkWritable(result.files);

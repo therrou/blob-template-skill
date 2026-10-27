@@ -276,3 +276,26 @@ test('modify reports the expanded replacement as its change text', async () => {
   const { files } = await planWith({ files: [], actions: [{ type: 'modify', path: 'm.ts', pattern: '^(b)$', text: '$1-x' }] }, { repo });
   assert.equal(files[0].text, 'b-x');
 });
+
+test('object when and generator/option supports follow the profile', async () => {
+  const gen = {
+    files: [{ template: 'x.tpl', path: 'a.ts', when: { react: '18' } }, { template: 'x.tpl', path: 'b.ts', when: { react: ['19'] } }],
+    supports: { styling: ['plain', 'tailwind-4'] },
+    options: { fancy: { type: 'boolean', supports: { app: ['next-app'] }, description: 'f' } },
+  };
+  assert.deepEqual((await planWith(gen, { options: { profile: 'react=18' } })).files.map((f) => f.path), ['out/a.ts']);
+  await assert.rejects(planWith(gen, { options: { profile: 'styling=emotion' } }), /t\/g does not support styling emotion \(supported: plain, tailwind-4\)/);
+  await assert.rejects(planWith(gen, { options: { fancy: true, profile: 'app=react-spa' } }), /--fancy is not supported with app react-spa/);
+  await assert.rejects(planWith({ supports: { react: ['18', '19'] } }, { repo: { deps: { react: '^17' } } }), /react 17 is not supported \(supported: 18, 19\)/);
+});
+
+test('out and requires can depend on the profile', async () => {
+  const gen = { out: [{ when: { app: 'next-pages' }, out: 'pages' }, { out: 'app' }], requires: [{ package: 'zzz', when: { react: '18' } }] };
+  assert.equal((await planWith(gen, { options: { profile: 'app=next-pages' } })).files[0].path, 'pages/thing.ts');
+  await assert.rejects(planWith(gen, { options: { profile: 'react=18' } }), /Missing requirements for t\/g: zzz/);
+});
+
+test('templates see profile and profileIs', async () => {
+  const gen = { template: '{{profile.styling}}|{{#if profileIs.react.18}}r18{{/if}}' };
+  assert.equal((await planWith(gen, { options: { profile: 'react=18' } })).files[0].content, 'plain|r18');
+});

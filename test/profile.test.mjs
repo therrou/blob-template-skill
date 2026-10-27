@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import path from 'node:path';
 
-import { detectProfile } from '../.agents/skills/codegen/scripts/lib/profile.mjs';
+import { detectProfile, resolveProfile } from '../.agents/skills/codegen/scripts/lib/profile.mjs';
 import { makeRepo } from './helpers.mjs';
 
 test('detects a Next 16 app router + React 19 + Tailwind 4 + Base UI repo', () => {
@@ -53,4 +53,18 @@ test('out-of-matrix versions keep their value and are marked unsupported', () =>
   assert.equal(dims.next.supported, false);
   const aria = detectProfile(makeRepo({ files: { 'components.json': '{"style":"aria-nova"}' } }));
   assert.deepEqual([aria.dims.primitives.value, aria.dims.primitives.supported], ['aria', false]);
+});
+
+test('config and flag override detection, with sources', () => {
+  const root = makeRepo({ deps: { react: '^18' }, files: { '.codegen/config.json': '{"profile":{"styling":"emotion"}}' } });
+  const { dims } = resolveProfile(root, 'react=19,app=react-spa');
+  assert.deepEqual([dims.styling, dims.react, dims.app], [{ value: 'emotion', source: 'config' }, { value: '19', source: 'flag' }, { value: 'react-spa', source: 'flag' }]);
+});
+
+test('typos in overrides are errors that list the allowed values', () => {
+  const root = makeRepo();
+  assert.throws(() => resolveProfile(root, 'stlying=emotion'), /Unknown profile key "stlying"\. Allowed: app, next, react, styling/);
+  assert.throws(() => resolveProfile(root, 'react=17'), /profile react must be one of: 18, 19\. Got "17"/);
+  const bad = makeRepo({ files: { '.codegen/config.json': '{"profil":{}}' } });
+  assert.throws(() => resolveProfile(bad), /Unknown key "profil" in \.codegen\/config\.json/);
 });

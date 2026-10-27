@@ -5,7 +5,6 @@ import { pathToFileURL } from 'node:url';
 import { CodegenError } from './errors.mjs';
 import {
   detectCn,
-  detectMajor,
   detectShadcnAliases,
   detectSlot,
   detectStorybook,
@@ -14,10 +13,11 @@ import {
   resolveAliasDir,
   resolveOut,
 } from './detect.mjs';
-import { ensureInside, runActions } from './actions.mjs';
+import { ensureInside, matches, runActions } from './actions.mjs';
 import { installCommand, missingDependencies } from './deps.mjs';
 import { elementVars } from './elements.mjs';
 import { parseName } from './names.mjs';
+import { DIMENSIONS, resolveProfile } from './profile.mjs';
 import { parseRoute } from './route.mjs';
 import { loadHelpers } from './helpers.mjs';
 import { findTodos, render } from './template.mjs';
@@ -28,6 +28,7 @@ export const GLOBAL_OPTIONS = {
   root: { type: 'string', description: 'Repo/app root. Defaults to the current directory.' },
   'dry-run': { type: 'boolean', description: 'Print the planned files without writing anything.' },
   'test-runner': { type: 'string', description: 'vitest | jest. Defaults to the one found in package.json.' },
+  profile: { type: 'string', description: 'Override detected targets, e.g. app=next-pages,styling=emotion. See --detect.' },
 };
 
 const camel = (flag) => flag.replace(/-(\w)/g, (_, c) => c.toUpperCase());
@@ -96,11 +97,34 @@ function assertOverrideHandles(template, gen, ctx) {
   }
 }
 
+// A requirement is "pkg" or { package: "pkg", when: { dim: value } } (only needed when the profile matches).
 function requiredPackages(gen, ctx) {
   const fromOptions = Object.entries(gen.options ?? {})
     .filter(([key]) => ctx[camel(key)])
     .flatMap(([, spec]) => spec.requires ?? []);
-  return [...(gen.requires ?? []), ...fromOptions];
+  return [...(gen.requires ?? []), ...fromOptions]
+    .filter((req) => typeof req === 'string' || matches(req.when, ctx))
+    .map((req) => (typeof req === 'string' ? req : req.package));
+}
+
+function checkSupports(supports, profile, describe) {
+  for (const [dim, allowed] of Object.entries(supports ?? {})) {
+    const { value, supported } = profile.dims[dim] ?? {};
+    if (supported === false) {
+      throw new CodegenError(
+        `${dim} ${value} is not supported (supported: ${DIMENSIONS[dim].values.join(', ')}). Set it in .codegen/config.json if detection is wrong.`,
+      );
+    }
+    if (!allowed.includes(value)) throw new CodegenError(`${describe(dim, value)} (supported: ${allowed.join(', ')}).`);
+  }
+}
+
+// `out` is a folder, or [{ when, out }, …] where the first matching entry wins.
+function pickOut(out, ctx) {
+  if (!Array.isArray(out)) return out;
+  const match = out.find((entry) => matches(entry.when, ctx));
+  if (!match) throw new CodegenError('No output folder matches this profile.');
+  return match.out;
 }
 
 export async function plan({ skillDir, root, pack, generator, options }) {
@@ -133,8 +157,33 @@ export async function plan({ skillDir, root, pack, generator, options }) {
     }
   }
 
+  const profile = resolveProfile(root, options.profile);
+  try {
+    return await planWithProfile({ skillDir, root, pack, generator, options, manifest, gen, profile });
+  } catch (err) {
+    if (err instanceof CodegenError) err.details = { ...err.details, profile: profile.dims };
+    throw err;
+  }
+}
+
+async function planWithProfile({ skillDir, root, pack, generator, options, manifest, gen, profile }) {
   const pkg = readPackageJson(root);
   const ctx = { ...manifest.vars, ...gen.vars };
+  ctx.profile = Object.fromEntries(Object.entries(profile.dims).map(([dim, { value }]) => [dim, value]));
+  ctx.profileIs = Object.fromEntries(
+    Object.entries(DIMENSIONS)
+      .filter(([, { values }]) => values)
+      .map(([dim, { values }]) => [dim, Object.fromEntries(values.map((v) => [v, ctx.profile[dim] === v]))]),
+  );
+  ctx.mui = profile.flags.mui;
+  // The Pages Router has no Server Components, so no RSC notes or 'use client'.
+  if (ctx.profile.app === 'next-pages') Object.assign(ctx, { server: false, client: false });
+
+  checkSupports(gen.supports, profile, (dim, value) => `${pack}/${generator} does not support ${dim} ${value}`);
+  for (const [key, spec] of Object.entries(gen.options ?? {})) {
+    if (options[key] === undefined) continue;
+    checkSupports(spec.supports, profile, (dim, value) => `--${key} is not supported with ${dim} ${value}`);
+  }
   for (const [key, spec] of Object.entries(gen.options ?? {})) {
     ctx[camel(key)] = options[key] ?? (spec.type === 'boolean' ? false : '');
   }
@@ -190,10 +239,9 @@ export async function plan({ skillDir, root, pack, generator, options }) {
     if (!ctx.storybookImport) throw new CodegenError('--with-story needs Storybook: no .storybook/ directory found.');
   }
 
-  const nextMajor = detectMajor(pkg, 'next');
-  ctx.asyncParams = nextMajor === null || nextMajor >= 15;
+  ctx.asyncParams = Number(ctx.profile.next) >= 15;
 
-  const outDir = path.resolve(root, options.out ?? resolveOut(root, gen.out));
+  const outDir = path.resolve(root, options.out ?? resolveOut(root, pickOut(gen.out, ctx)));
   ensureInside(root, outDir);
 
   const envOf = await templateEnvs(skillDir, root);
@@ -247,7 +295,7 @@ export async function plan({ skillDir, root, pack, generator, options }) {
       })
       .map((t) => ({ file: f.path, ...t }));
   });
-  return { files, skipped, todo };
+  return { files, skipped, todo, profile: profile.dims };
 }
 
 // All-or-nothing: refuse if any create target exists or a modified file changed since planning;

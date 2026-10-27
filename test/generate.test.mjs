@@ -363,3 +363,12 @@ test('--dry-run reports conflicts the real run would refuse', () => {
   assert.equal(json.ok, false);
   assert.deepEqual(json.conflicts, ['contexts/theme-context.tsx']);
 });
+
+test('--detect prints the profile; every result carries it', () => {
+  const root = makeRepo({ deps: { react: '^19' } });
+  const detect = run(root, '--detect').json;
+  assert.equal(detect.ok, true);
+  assert.deepEqual(detect.profile.app, { value: 'react-spa', source: 'detected' });
+  assert.equal(run(root, 'react', 'util', '--name', 'x').json.profile.react.value, '19');
+  assert.equal(run(root, 'react', 'util', '--name', 'x', '--profile', 'nope=1').json.ok, false);
+});

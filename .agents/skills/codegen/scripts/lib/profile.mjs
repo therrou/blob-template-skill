@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
+import { CodegenError } from './errors.mjs';
 import { allDeps, detectCn, detectShadcnAliases, readPackageJson, resolveAliasDir } from './detect.mjs';
 
 // The support matrix. `values: null` is free text; `newest` is the fallback when nothing signals a value.
@@ -111,4 +112,45 @@ export function detectProfile(root) {
     },
     flags: { mui: deps['@mui/material'] !== undefined },
   };
+}
+
+const CONFIG_FILE = path.join('.codegen', 'config.json');
+const CONFIG_KEYS = ['profile'];
+
+function readConfig(root) {
+  const file = path.join(root, CONFIG_FILE);
+  if (!fs.existsSync(file)) return {};
+  let config;
+  try {
+    config = JSON.parse(fs.readFileSync(file, 'utf8'));
+  } catch (err) {
+    throw new CodegenError(`Invalid JSON in .codegen/config.json: ${err.message}`);
+  }
+  for (const key of Object.keys(config ?? {})) {
+    if (!CONFIG_KEYS.includes(key)) throw new CodegenError(`Unknown key "${key}" in .codegen/config.json. Allowed: ${CONFIG_KEYS.join(', ')}.`);
+  }
+  return config ?? {};
+}
+
+function override(dims, key, value, source) {
+  if (!(key in DIMENSIONS)) throw new CodegenError(`Unknown profile key "${key}". Allowed: ${Object.keys(DIMENSIONS).join(', ')}.`);
+  const { values } = DIMENSIONS[key];
+  if (values && !values.includes(String(value))) {
+    throw new CodegenError(`profile ${key} must be one of: ${values.join(', ')}. Got "${value}".`);
+  }
+  dims[key] = { value: String(value), source };
+}
+
+// Precedence: --profile flag > .codegen/config.json > detection.
+export function resolveProfile(root, flag) {
+  const profile = detectProfile(root);
+  for (const [key, value] of Object.entries(readConfig(root).profile ?? {})) override(profile.dims, key, value, 'config');
+  if (typeof flag === 'string') {
+    for (const entry of flag.split(',').map((e) => e.trim()).filter(Boolean)) {
+      const eq = entry.indexOf('=');
+      if (eq < 1) throw new CodegenError(`Invalid --profile entry "${entry}": use key=value.`);
+      override(profile.dims, entry.slice(0, eq).trim(), entry.slice(eq + 1).trim(), 'flag');
+    }
+  }
+  return profile;
 }
