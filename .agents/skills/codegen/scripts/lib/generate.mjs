@@ -13,6 +13,7 @@ import {
   resolveAliasDir,
   resolveOut,
 } from './detect.mjs';
+import { ensureInside, runActions } from './actions.mjs';
 import { installCommand, missingDependencies } from './deps.mjs';
 import { elementVars } from './elements.mjs';
 import { parseName } from './names.mjs';
@@ -29,14 +30,6 @@ export const GLOBAL_OPTIONS = {
 };
 
 const camel = (flag) => flag.replace(/-(\w)/g, (_, c) => c.toUpperCase());
-
-function ensureInside(root, target) {
-  const rel = path.relative(root, target);
-  if (rel.startsWith('..') || path.isAbsolute(rel)) {
-    throw new CodegenError(`Refusing to write outside the repo root: ${target}`);
-  }
-  return rel.split(path.sep).join('/');
-}
 
 export function listPacks(skillDir) {
   const packsDir = path.join(skillDir, 'packs');
@@ -203,22 +196,33 @@ export async function plan({ skillDir, root, pack, generator, options }) {
   ensureInside(root, outDir);
 
   const envOf = await templateEnvs(skillDir, root);
-  const files = gen.files
-    .filter((f) => !f.when || Boolean(ctx[f.when]))
-    .map((f) => {
-      const template = resolveTemplate(skillDir, root, pack, f.template);
-      const { file, overridden, owner } = template;
-      if (overridden) assertOverrideHandles(template, gen, ctx);
-      const abs = path.join(outDir, render(f.path, ctx, `path of ${f.template}`));
-      return {
-        abs,
-        path: ensureInside(root, abs),
-        content: render(fs.readFileSync(file, 'utf8'), ctx, f.template, envOf(owner)),
-        overridden,
-      };
-    });
+  const renderPath = (action) => render(action.path, ctx, `path of ${action.type} ${action.template ?? action.path}`, envOf(pack));
+  const renderText = (action) => {
+    if ((typeof action.template === 'string') === (typeof action.text === 'string')) {
+      throw new CodegenError(`${action.type} ${action.path}: needs exactly one of template or text.`);
+    }
+    if (typeof action.text === 'string') {
+      return { content: render(action.text, ctx, `${pack}/${generator} ${action.type} ${action.path}`, envOf(pack)), overridden: false };
+    }
+    const template = resolveTemplate(skillDir, root, pack, action.template);
+    if (template.overridden) assertOverrideHandles(template, gen, ctx);
+    return { content: render(fs.readFileSync(template.file, 'utf8'), ctx, action.template, envOf(template.owner)), overridden: template.overridden };
+  };
+  const actions = [...(gen.files ?? []).map((f) => ({ type: 'add', ...f })), ...(gen.actions ?? [])];
+  const { files, skipped } = await runActions(actions, { root, outDir, ctx, renderPath, renderText });
 
-  return { files, todo: files.flatMap((f) => findTodos(f.content).map((t) => ({ file: f.path, ...t }))) };
+  const todo = files.flatMap((f) => {
+    const before = f.kind === 'modify' ? findTodos(f.before).map((t) => t.text) : [];
+    return findTodos(f.content)
+      .filter((t) => {
+        const i = before.indexOf(t.text);
+        if (i === -1) return true;
+        before.splice(i, 1);
+        return false;
+      })
+      .map((t) => ({ file: f.path, ...t }));
+  });
+  return { files, skipped, todo };
 }
 
 // All-or-nothing: refuse if any target exists; roll back on a mid-write failure.

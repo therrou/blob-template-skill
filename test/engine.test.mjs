@@ -154,3 +154,59 @@ test('a borrowed template resolves partials from the pack that owns it', async (
   const repo = { files: { '.codegen/templates/o/_partials/p.tpl': 'override' } };
   assert.equal((await planWith(gen, { repo })).files[0].content, 'override');
 });
+
+const append = (extra = {}) => ({ type: 'append', path: 'index.ts', text: "export * from './{{name.kebab}}';", ...extra });
+
+test('files still work and run before actions', async () => {
+  const { files } = await planWith({ actions: [append()] }, { repo: { files: { 'out/index.ts': "export * from './a';\n" } } });
+  assert.deepEqual(files.map((f) => [f.path, f.kind]), [['out/thing.ts', 'create'], ['out/index.ts', 'modify']]);
+  assert.equal(files[1].content, "export * from './a';\nexport * from './thing';\n");
+});
+
+test('append is unique by default and skipIfMissing skips a missing target', async () => {
+  const repo = { files: { 'out/index.ts': "export * from './thing';\n" } };
+  assert.deepEqual((await planWith({ actions: [append()] }, { repo })).skipped, [{ path: 'out/index.ts', action: 'append', reason: 'already present' }]);
+  assert.deepEqual((await planWith({ actions: [append({ skipIfMissing: true })] })).skipped, [{ path: 'out/index.ts', action: 'append', reason: 'missing' }]);
+  await assert.rejects(planWith({ actions: [append()] }), /append: out\/index\.ts does not exist/);
+});
+
+test('append after a pattern; a pattern that does not match is an error', async () => {
+  const repo = { files: { 'out/r.ts': 'const routes = [\n];\n' } };
+  const a = { type: 'append', path: 'r.ts', pattern: 'routes = \\[', text: "  '{{name.kebab}}',", separator: '\n' };
+  assert.equal((await planWith({ actions: [a] }, { repo })).files[1].content, "const routes = [\n  'thing',\n];\n");
+  await assert.rejects(planWith({ actions: [{ ...a, pattern: 'nope' }] }, { repo }), /append: pattern \/nope\/ not found in out\/r\.ts/);
+});
+
+test('modify replaces the first match with $ references; append inserts $ literally', async () => {
+  const repo = { files: { 'out/m.ts': 'a\nb\n' } };
+  const m = { type: 'modify', path: 'm.ts', pattern: '^(b)$', text: '$1-${x}' };
+  assert.equal((await planWith({ actions: [m] }, { repo })).files[1].content, 'a\nb-${x}\n');
+  const a = { type: 'append', path: 'm.ts', text: '`${x}` $&' };
+  assert.equal((await planWith({ actions: [a] }, { repo })).files[1].content, 'a\nb\n`${x}` $&\n');
+});
+
+test('end-of-file append handles a missing trailing newline and CRLF', async () => {
+  const noNl = { files: { 'out/index.ts': "export * from './a';" } };
+  assert.equal((await planWith({ actions: [append()] }, { repo: noNl })).files[1].content, "export * from './a';\nexport * from './thing';\n");
+  const crlf = { files: { 'out/index.ts': "export * from './a';\r\n" } };
+  assert.equal((await planWith({ actions: [append()] }, { repo: crlf })).files[1].content, "export * from './a';\r\nexport * from './thing';\r\n");
+});
+
+test('an invalid pattern is a CodegenError naming the action', async () => {
+  const repo = { files: { 'out/m.ts': 'x' } };
+  await assert.rejects(planWith({ actions: [{ type: 'modify', path: 'm.ts', pattern: '(', text: 'y' }] }, { repo }), /modify m\.ts: invalid pattern/);
+});
+
+test('add with skipIfExists, then append to it in the same run', async () => {
+  const actions = [{ type: 'add', path: 'index.ts', text: '', skipIfExists: true }, append()];
+  const { files } = await planWith({ files: [], actions });
+  assert.deepEqual(files.map((f) => [f.path, f.kind, f.content]), [['out/index.ts', 'create', "export * from './thing';\n"]]);
+});
+
+test('root-relative paths follow the src/ rule; template and text are exclusive', async () => {
+  const repo = { dirs: ['src/app'], files: { 'src/app/layout.tsx': 'x\n' } };
+  const a = { type: 'append', path: '/app/layout.tsx', text: 'y' };
+  assert.equal((await planWith({ files: [], actions: [a] }, { repo })).files[0].path, 'src/app/layout.tsx');
+  await assert.rejects(planWith({ files: [], actions: [{ ...a, path: '/../x' }] }, { repo }), /outside the repo root/);
+  await assert.rejects(planWith({ files: [], actions: [{ ...a, template: 'x.tpl' }] }, { repo }), /exactly one of template or text/);
+});
