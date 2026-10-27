@@ -1,0 +1,164 @@
+{
+  "react/component": [
+    {
+      "path": "components/x-card/x-card.tsx",
+      "content": "import type { ComponentProps } from 'react';\nimport { Slot } from '@radix-ui/react-slot';\nimport { cva, type VariantProps } from 'class-variance-authority';\n\nimport { cn } from '@/lib/utils';\n\nexport const xCardVariants = cva('', {\n  variants: {\n    variant: {\n      // TODO(codegen): one entry per visual variant, semantic token classes only (e.g. bg-primary text-primary-foreground)\n      default: '',\n    },\n    size: {\n      // TODO(codegen): one entry per size, spacing and text tokens only (e.g. h-9 px-4 text-sm)\n      default: '',\n    },\n  },\n  defaultVariants: { variant: 'default', size: 'default' },\n});\n\nexport type XCardProps = ComponentProps<'button'> & VariantProps<typeof xCardVariants> & { asChild?: boolean } & {\n  // TODO(codegen): add component-specific props (or drop this intersection)\n};\n\n// TODO(codegen): a11y: icon-only buttons need an aria-label; use the disabled attribute for the disabled state\nexport function XCard({ className, variant, size, asChild = false, type = 'button', children, ...props }: XCardProps) {\n  const Comp = asChild ? Slot : 'button';\n\n  return (\n    <Comp className={cn(xCardVariants({ variant, size }), className)} type={asChild ? undefined : type} {...props}>\n      {/* TODO(codegen): implement markup; compose existing UI primitives and use design tokens only */}\n      {children}\n    </Comp>\n  );\n}\n"
+    },
+    {
+      "path": "components/x-card/index.ts",
+      "content": "export { XCard, xCardVariants } from './x-card';\nexport type { XCardProps } from './x-card';\n"
+    },
+    {
+      "path": "components/x-card/x-card.test.tsx",
+      "content": "import { describe, expect, it } from 'vitest';\nimport { render, screen } from '@testing-library/react';\n\nimport { XCard } from './x-card';\n\ndescribe('XCard', () => {\n  it('renders its children', () => {\n    render(<XCard>content</XCard>);\n    expect(screen.getByText('content')).toBeTruthy();\n  });\n\n  // TODO(codegen): test behavior users see (roles, states, interactions via @testing-library/user-event)\n});\n"
+    }
+  ],
+  "react/hook": [
+    {
+      "path": "hooks/use-x-card.ts",
+      "content": "export type UseXCardResult = {\n  // TODO(codegen): describe what the hook returns\n};\n\nexport function useXCard(): UseXCardResult {\n  // TODO(codegen): implement; clean up every effect/subscription and keep returned callbacks stable\n  return {};\n}\n"
+    },
+    {
+      "path": "hooks/use-x-card.test.ts",
+      "content": "import { describe, expect, it } from 'vitest';\nimport { renderHook } from '@testing-library/react';\n\nimport { useXCard } from './use-x-card';\n\ndescribe('useXCard', () => {\n  it('returns its initial result', () => {\n    const { result } = renderHook(() => useXCard());\n    expect(result.current).toBeDefined();\n  });\n\n  // TODO(codegen): test state transitions with act() and cleanup on unmount\n});\n"
+    }
+  ],
+  "react/context": [
+    {
+      "path": "contexts/x-card-context.tsx",
+      "content": "import { createContext, useContext, type ReactNode } from 'react';\n\nexport type XCardContextValue = {\n  // TODO(codegen): describe the shared state and actions\n};\n\nconst XCardContext = createContext<XCardContextValue | null>(null);\n\nexport function XCardProvider({ children }: { children: ReactNode }) {\n  // TODO(codegen): hold state here; wrap the value in useMemo when it contains objects or functions\n  const value: XCardContextValue = {};\n  return <XCardContext.Provider value={value}>{children}</XCardContext.Provider>;\n}\n\nexport function useXCard(): XCardContextValue {\n  const context = useContext(XCardContext);\n  if (!context) throw new Error('useXCard must be used within <XCardProvider>.');\n  return context;\n}\n"
+    }
+  ],
+  "react/util": [
+    {
+      "path": "utils/x-card.ts",
+      "content": "// TODO(codegen): replace the signature with real typed params and return type\nexport function xCard(input: unknown): unknown {\n  // TODO(codegen): implement as a pure function (no side effects, no React, no I/O unless the name says so)\n  return input;\n}\n"
+    },
+    {
+      "path": "utils/x-card.test.ts",
+      "content": "import { describe, expect, it } from 'vitest';\n\nimport { xCard } from './x-card';\n\ndescribe('xCard', () => {\n  // TODO(codegen): replace with real cases: typical input, edge cases, invalid input\n  it('is a function', () => {\n    expect(typeof xCard).toBe('function');\n  });\n});\n"
+    }
+  ],
+  "react/page": [
+    {
+      "path": "pages/x-card-page.tsx",
+      "content": "// TODO(codegen): register this page in the router (path + lazy import if the app code-splits routes)\nexport function XCardPage() {\n  return (\n    <main>\n      {/* TODO(codegen): page content; fetch data via the repo's data layer, not in raw effects */}\n    </main>\n  );\n}\n"
+    },
+    {
+      "path": "pages/x-card-page.test.tsx",
+      "content": "import { describe, expect, it } from 'vitest';\nimport { render, screen } from '@testing-library/react';\n\nimport { XCardPage } from './x-card-page';\n\ndescribe('XCardPage', () => {\n  it('renders the main landmark', () => {\n    render(<XCardPage />);\n    expect(screen.getByRole('main')).toBeTruthy();\n  });\n\n  // TODO(codegen): test the page's key content and states (loading, empty, error)\n});\n"
+    }
+  ],
+  "react/form-field": [
+    {
+      "path": "components/x-card/x-card.tsx",
+      "content": "import { useFormContext, type FieldPath, type FieldValues } from 'react-hook-form';\n\nimport { FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';\nimport { Input } from '@/components/ui/input';\n\nexport type XCardProps<TValues extends FieldValues = FieldValues> = {\n  name: FieldPath<TValues>;\n  label: string;\n  description?: string;\n};\n\n// Render inside the shadcn <Form {...form}>. Validation lives in the form's zod schema (zodResolver), not here.\nexport function XCard<TValues extends FieldValues = FieldValues>({ name, label, description }: XCardProps<TValues>) {\n  const { control } = useFormContext();\n  return (\n    <FormField\n      control={control}\n      name={name}\n      render={({ field }) => (\n        <FormItem>\n          <FormLabel>{label}</FormLabel>\n          <FormControl>\n            {/* TODO(codegen): set type and autoComplete for this field (e.g. type=\"email\" autoComplete=\"email\") */}\n            <Input {...field} />\n          </FormControl>\n          {description ? <FormDescription>{description}</FormDescription> : null}\n          <FormMessage />\n        </FormItem>\n      )}\n    />\n  );\n}\n"
+    },
+    {
+      "path": "components/x-card/index.ts",
+      "content": "export { XCard } from './x-card';\nexport type { XCardProps } from './x-card';\n"
+    },
+    {
+      "path": "components/x-card/x-card.test.tsx",
+      "content": "import { describe, expect, it } from 'vitest';\nimport type { ReactNode } from 'react';\nimport { render, screen } from '@testing-library/react';\nimport { useForm } from 'react-hook-form';\n\nimport { Form } from '@/components/ui/form';\n\nimport { XCard } from './x-card';\n\nfunction Harness({ children }: { children: ReactNode }) {\n  const form = useForm({ defaultValues: { field: '' } });\n  return <Form {...form}>{children}</Form>;\n}\n\ndescribe('XCard', () => {\n  it('labels its control', () => {\n    render(\n      <Harness>\n        <XCard name=\"field\" label=\"Label\" />\n      </Harness>,\n    );\n    expect(screen.getByLabelText('Label')).toBeTruthy();\n  });\n\n  // TODO(codegen): submit with invalid values and assert the zod error message is announced\n});\n"
+    }
+  ],
+  "next/component": [
+    {
+      "path": "components/x-card/x-card.tsx",
+      "content": "import type { ComponentProps } from 'react';\nimport { Slot } from '@radix-ui/react-slot';\nimport { cva, type VariantProps } from 'class-variance-authority';\n\nimport { cn } from '@/lib/utils';\n\n// Server Component by default. If part of this needs state, effects or browser APIs,\n// move only that part into a small client component instead of adding 'use client' here.\nexport const xCardVariants = cva('', {\n  variants: {\n    variant: {\n      // TODO(codegen): one entry per visual variant, semantic token classes only (e.g. bg-primary text-primary-foreground)\n      default: '',\n    },\n    size: {\n      // TODO(codegen): one entry per size, spacing and text tokens only (e.g. h-9 px-4 text-sm)\n      default: '',\n    },\n  },\n  defaultVariants: { variant: 'default', size: 'default' },\n});\n\nexport type XCardProps = ComponentProps<'button'> & VariantProps<typeof xCardVariants> & { asChild?: boolean } & {\n  // TODO(codegen): add component-specific props (or drop this intersection)\n};\n\n// TODO(codegen): a11y: icon-only buttons need an aria-label; use the disabled attribute for the disabled state\nexport function XCard({ className, variant, size, asChild = false, type = 'button', children, ...props }: XCardProps) {\n  const Comp = asChild ? Slot : 'button';\n\n  return (\n    <Comp className={cn(xCardVariants({ variant, size }), className)} type={asChild ? undefined : type} {...props}>\n      {/* TODO(codegen): implement markup; compose existing UI primitives and use design tokens only */}\n      {children}\n    </Comp>\n  );\n}\n"
+    },
+    {
+      "path": "components/x-card/index.ts",
+      "content": "export { XCard, xCardVariants } from './x-card';\nexport type { XCardProps } from './x-card';\n"
+    },
+    {
+      "path": "components/x-card/x-card.test.tsx",
+      "content": "import { describe, expect, it } from 'vitest';\nimport { render, screen } from '@testing-library/react';\n\nimport { XCard } from './x-card';\n\ndescribe('XCard', () => {\n  it('renders its children', () => {\n    render(<XCard>content</XCard>);\n    expect(screen.getByText('content')).toBeTruthy();\n  });\n\n  // TODO(codegen): test behavior users see (roles, states, interactions via @testing-library/user-event)\n});\n"
+    }
+  ],
+  "next/client-component": [
+    {
+      "path": "components/x-card/x-card.tsx",
+      "content": "'use client';\n\nimport type { ComponentProps } from 'react';\nimport { cva, type VariantProps } from 'class-variance-authority';\n\nimport { cn } from '@/lib/utils';\n\nexport const xCardVariants = cva('', {\n  variants: {\n    variant: {\n      // TODO(codegen): one entry per visual variant, semantic token classes only (e.g. bg-primary text-primary-foreground)\n      default: '',\n    },\n    size: {\n      // TODO(codegen): one entry per size, spacing and text tokens only (e.g. h-9 px-4 text-sm)\n      default: '',\n    },\n  },\n  defaultVariants: { variant: 'default', size: 'default' },\n});\n\nexport type XCardProps = ComponentProps<'nav'> & VariantProps<typeof xCardVariants> & {\n  // TODO(codegen): add component-specific props (or drop this intersection)\n};\n\n// TODO(codegen): a11y: name the nav with aria-label (e.g. \"Footer\") so screen readers can tell navs apart\nexport function XCard({ className, variant, size, children, ...props }: XCardProps) {\n  return (\n    <nav className={cn(xCardVariants({ variant, size }), className)} {...props}>\n      {/* TODO(codegen): implement markup; compose existing UI primitives and use design tokens only */}\n      {children}\n    </nav>\n  );\n}\n"
+    },
+    {
+      "path": "components/x-card/index.ts",
+      "content": "export { XCard, xCardVariants } from './x-card';\nexport type { XCardProps } from './x-card';\n"
+    }
+  ],
+  "next/hook": [
+    {
+      "path": "hooks/use-x-card.ts",
+      "content": "// Hooks only run in Client Components: the calling component needs 'use client'.\nexport type UseXCardResult = {\n  // TODO(codegen): describe what the hook returns\n};\n\nexport function useXCard(): UseXCardResult {\n  // TODO(codegen): implement; clean up every effect/subscription and keep returned callbacks stable\n  return {};\n}\n"
+    },
+    {
+      "path": "hooks/use-x-card.test.ts",
+      "content": "import { describe, expect, it } from 'vitest';\nimport { renderHook } from '@testing-library/react';\n\nimport { useXCard } from './use-x-card';\n\ndescribe('useXCard', () => {\n  it('returns its initial result', () => {\n    const { result } = renderHook(() => useXCard());\n    expect(result.current).toBeDefined();\n  });\n\n  // TODO(codegen): test state transitions with act() and cleanup on unmount\n});\n"
+    }
+  ],
+  "next/context": [
+    {
+      "path": "contexts/x-card-context.tsx",
+      "content": "'use client';\n\nimport { createContext, useContext, type ReactNode } from 'react';\n\nexport type XCardContextValue = {\n  // TODO(codegen): describe the shared state and actions\n};\n\nconst XCardContext = createContext<XCardContextValue | null>(null);\n\nexport function XCardProvider({ children }: { children: ReactNode }) {\n  // TODO(codegen): hold state here; wrap the value in useMemo when it contains objects or functions\n  const value: XCardContextValue = {};\n  return <XCardContext.Provider value={value}>{children}</XCardContext.Provider>;\n}\n\nexport function useXCard(): XCardContextValue {\n  const context = useContext(XCardContext);\n  if (!context) throw new Error('useXCard must be used within <XCardProvider>.');\n  return context;\n}\n"
+    }
+  ],
+  "next/util": [
+    {
+      "path": "lib/x-card.ts",
+      "content": "import 'server-only';\n\n// TODO(codegen): replace the signature with real typed params and return type\nexport function xCard(input: unknown): unknown {\n  // TODO(codegen): implement as a pure function (no side effects, no React, no I/O unless the name says so)\n  return input;\n}\n"
+    },
+    {
+      "path": "lib/x-card.test.ts",
+      "content": "import { describe, expect, it } from 'vitest';\n\nimport { xCard } from './x-card';\n\ndescribe('xCard', () => {\n  // TODO(codegen): replace with real cases: typical input, edge cases, invalid input\n  it('is a function', () => {\n    expect(typeof xCard).toBe('function');\n  });\n});\n"
+    }
+  ],
+  "next/route": [
+    {
+      "path": "app/blog/[slug]/page.tsx",
+      "content": "type BlogSlugPageProps = {\n  params: Promise<{ slug: string }>;\n};\n\n// TODO(codegen): add generateMetadata({ params }) if the title depends on params\nexport default async function BlogSlugPage({ params }: BlogSlugPageProps) {\n  const { slug } = await params;\n  // TODO(codegen): fetch data here on the server and pass plain props down; keep client components at the leaves\n  return (\n    <main>\n      {/* TODO(codegen): page content */}\n    </main>\n  );\n}\n"
+    },
+    {
+      "path": "app/blog/[slug]/layout.tsx",
+      "content": "import type { ReactNode } from 'react';\n\nexport default function BlogSlugLayout({ children }: { children: ReactNode }) {\n  // TODO(codegen): shared UI for this segment (it persists across child navigations; do not read searchParams here)\n  return <>{children}</>;\n}\n"
+    },
+    {
+      "path": "app/blog/[slug]/loading.tsx",
+      "content": "export default function Loading() {\n  return (\n    <div aria-busy=\"true\" aria-live=\"polite\">\n      {/* TODO(codegen): skeleton that matches the page layout (reuse the repo's Skeleton primitive if there is one) */}\n    </div>\n  );\n}\n"
+    },
+    {
+      "path": "app/blog/[slug]/error.tsx",
+      "content": "'use client';\n\nimport { useEffect } from 'react';\n\ntype ErrorProps = {\n  error: Error & { digest?: string };\n  reset: () => void;\n};\n\nexport default function BlogSlugError({ error, reset }: ErrorProps) {\n  useEffect(() => {\n    // TODO(codegen): report to the repo's error tracker instead of the console\n    console.error(error);\n  }, [error]);\n\n  return (\n    <div role=\"alert\">\n      {/* TODO(codegen): user-facing message using the repo's UI primitives */}\n      <button type=\"button\" onClick={reset}>\n        Try again\n      </button>\n    </div>\n  );\n}\n"
+    }
+  ],
+  "next/api-route": [
+    {
+      "path": "app/api/blog/[slug]/route.ts",
+      "content": "import { NextResponse } from 'next/server';\n\ntype RouteContext = {\n  params: Promise<{ slug: string }>;\n};\n\nexport async function GET(request: Request, { params }: RouteContext) {\n  const { slug } = await params;\n  // TODO(codegen): authenticate/authorize, validate input (search params, body), handle errors with proper status codes\n  return NextResponse.json({ ok: true });\n}\n"
+    },
+    {
+      "path": "app/api/blog/[slug]/route.test.ts",
+      "content": "import { describe, expect, it } from 'vitest';\n\nimport { GET } from './route';\n\ndescribe('GET /api/blog/[slug]', () => {\n  it('responds with 200', async () => {\n    const response = await GET(new Request('http://localhost/api/blog/test'), {\n      params: Promise.resolve({ slug: 'test' }),\n    });\n    expect(response.status).toBe(200);\n  });\n\n  // TODO(codegen): cover validation errors, auth failures and the success payload shape\n});\n"
+    }
+  ],
+  "next/server-action": [
+    {
+      "path": "actions/x-card.ts",
+      "content": "'use server';\n\nexport type XCardState = { ok: true } | { ok: false; error: string };\n\nexport async function xCardAction(formData: FormData): Promise<XCardState> {\n  // TODO(codegen): validate formData with the repo's schema library; never trust client input\n  // TODO(codegen): check authentication and authorization before mutating\n  // TODO(codegen): perform the mutation, then revalidatePath()/revalidateTag() what changed\n  void formData;\n  return { ok: true };\n}\n"
+    }
+  ],
+  "next/form-field": [
+    {
+      "path": "components/x-card/x-card.tsx",
+      "content": "'use client';\n\nimport { useFormContext, type FieldPath, type FieldValues } from 'react-hook-form';\n\nimport { FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';\nimport { Input } from '@/components/ui/input';\n\nexport type XCardProps<TValues extends FieldValues = FieldValues> = {\n  name: FieldPath<TValues>;\n  label: string;\n  description?: string;\n};\n\n// Render inside the shadcn <Form {...form}>. Validation lives in the form's zod schema (zodResolver), not here.\nexport function XCard<TValues extends FieldValues = FieldValues>({ name, label, description }: XCardProps<TValues>) {\n  const { control } = useFormContext();\n  return (\n    <FormField\n      control={control}\n      name={name}\n      render={({ field }) => (\n        <FormItem>\n          <FormLabel>{label}</FormLabel>\n          <FormControl>\n            {/* TODO(codegen): set type and autoComplete for this field (e.g. type=\"email\" autoComplete=\"email\") */}\n            <Input {...field} />\n          </FormControl>\n          {description ? <FormDescription>{description}</FormDescription> : null}\n          <FormMessage />\n        </FormItem>\n      )}\n    />\n  );\n}\n"
+    },
+    {
+      "path": "components/x-card/index.ts",
+      "content": "export { XCard } from './x-card';\nexport type { XCardProps } from './x-card';\n"
+    },
+    {
+      "path": "components/x-card/x-card.test.tsx",
+      "content": "import { describe, expect, it } from 'vitest';\nimport type { ReactNode } from 'react';\nimport { render, screen } from '@testing-library/react';\nimport { useForm } from 'react-hook-form';\n\nimport { Form } from '@/components/ui/form';\n\nimport { XCard } from './x-card';\n\nfunction Harness({ children }: { children: ReactNode }) {\n  const form = useForm({ defaultValues: { field: '' } });\n  return <Form {...form}>{children}</Form>;\n}\n\ndescribe('XCard', () => {\n  it('labels its control', () => {\n    render(\n      <Harness>\n        <XCard name=\"field\" label=\"Label\" />\n      </Harness>,\n    );\n    expect(screen.getByLabelText('Label')).toBeTruthy();\n  });\n\n  // TODO(codegen): submit with invalid values and assert the zod error message is announced\n});\n"
+    }
+  ]
+}
