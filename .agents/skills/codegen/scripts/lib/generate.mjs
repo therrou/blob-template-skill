@@ -4,7 +4,6 @@ import { pathToFileURL } from 'node:url';
 
 import { CodegenError } from './errors.mjs';
 import {
-  detectCn,
   detectShadcnAliases,
   detectSlot,
   detectStorybook,
@@ -198,7 +197,7 @@ async function planWithProfile({ skillDir, root, pack, generator, options, manif
     ctx.name = parseName(options.name, gen.strip);
   }
 
-  if ('cn' in (gen.options ?? {}) && !ctx.cn) ctx.cn = detectCn(root) ?? '';
+  if ('cn' in (gen.options ?? {}) && !ctx.cn) ctx.cn = ctx.profile.cn === 'none' ? '' : ctx.profile.cn;
   ctx.ui = detectShadcnAliases(root).ui ?? '@/components/ui';
   ctx.slot = detectSlot(pkg) ?? { import: '', component: '' };
 
@@ -220,7 +219,7 @@ async function planWithProfile({ skillDir, root, pack, generator, options, manif
   }
 
   if (ctx.element) {
-    ctx.el = elementVars({ element: ctx.element, name: ctx.name, variants: ctx.variants, asChild: ctx.asChild, cn: ctx.cn });
+    ctx.el = elementVars({ element: ctx.element, name: ctx.name, variants: ctx.variants, asChild: ctx.asChild, cn: ctx.cn, react18: ctx.profile.react === '18' });
   }
 
   ctx.vitest = false;

@@ -224,18 +224,22 @@ test('every element × variants × as-child × cn combination renders consistent
     for (const element of pack.generators.component.options.element.choices) {
       for (const variants of [false, true]) {
         for (const asChild of [false, true]) {
-          const options = { name: `x-${element}`, element, ...(variants && { variants: true }), ...(asChild && { 'as-child': true }) };
+         for (const react of ['18', '19']) {
+          const options = { name: `x-${element}`, element, profile: `react=${react}`, ...(variants && { variants: true }), ...(asChild && { 'as-child': true }) };
           const [main, index] = (await plan({ skillDir, root, pack: 'react', generator: 'component', options })).files;
           const src = main.content;
-          const label = `${element} variants=${variants} asChild=${asChild}`;
+          const label = `${element} variants=${variants} asChild=${asChild} react=${react}`;
           const tag = asChild ? 'Comp' : element;
           assert.doesNotMatch(src, /\{\{/, label);
-          assert.match(src, new RegExp(`<${tag} className=`), label);
+          assert.match(src, new RegExp(`<${tag}${react === '18' ? ' ref=\\{ref\\}' : ''} className=`), label);
+          assert.equal(/forwardRef</.test(src), react === '18', label);
+          assert.equal(/\.displayName = /.test(src), react === '18', label);
           assert.match(src, new RegExp(`</${tag}>`), label);
           assert.equal(/const Comp = /.test(src), asChild, label);
           assert.equal(/ type=\{/.test(src), element === 'button', label);
           assert.equal(/Variants = cva\(/.test(src), variants, label);
           assert.equal(/Variants \}/.test(index.content), variants, label);
+         }
         }
       }
     }
@@ -371,4 +375,21 @@ test('--detect prints the profile; every result carries it', () => {
   assert.deepEqual(detect.profile.app, { value: 'react-spa', source: 'detected' });
   assert.equal(run(root, 'react', 'util', '--name', 'x').json.profile.react.value, '19');
   assert.equal(run(root, 'react', 'util', '--name', 'x', '--profile', 'nope=1').json.ok, false);
+});
+
+test('react 18 components forward refs; react 19 is unchanged', () => {
+  const root = makeRepo({ deps: { react: '^18.3' } });
+  run(root, 'react', 'component', '--name', 'Card', '--element', 'article');
+  const src = read(root, 'components/card/card.tsx');
+  assert.match(src, /import \{ forwardRef, type ComponentPropsWithoutRef \} from 'react';/);
+  assert.match(src, /export const Card = forwardRef<HTMLElement, CardProps>\(function Card\(\{ className, children, \.\.\.props \}, ref\) \{/);
+  assert.match(src, /<article ref=\{ref\} /);
+  assert.match(src, /Card\.displayName = 'Card';/);
+  assert.match(read(root, 'components/card/index.ts'), /export \{ Card \} from '\.\/card';/);
+});
+
+test('cn import follows existing ui components', () => {
+  const root = makeRepo({ deps: { react: '^19' }, files: { 'components/ui/button.tsx': "import { cn } from 'cn';\n" } });
+  run(root, 'react', 'component', '--name', 'Card', '--element', 'article');
+  assert.match(read(root, 'components/card/card.tsx'), /import \{ cn \} from 'cn';/);
 });

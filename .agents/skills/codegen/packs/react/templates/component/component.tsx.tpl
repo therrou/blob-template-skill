@@ -2,7 +2,11 @@
 'use client';
 
 {{/if}}
+{{#if profileIs.react.18}}
+import { forwardRef, type ComponentPropsWithoutRef } from 'react';
+{{else}}
 import type { ComponentProps } from 'react';
+{{/if}}
 {{#if asChild}}
 import { Slot } from '{{slot.import}}';
 {{/if}}
@@ -41,15 +45,24 @@ export type {{name.pascal}}Props = {{el.propsType}} & {
 {{#if el.a11yNote}}
 // TODO(codegen): a11y: {{el.a11yNote}}
 {{/if}}
+{{#if profileIs.react.18}}
+export const {{name.pascal}} = forwardRef<{{el.refType}}, {{name.pascal}}Props>(function {{name.pascal}}({ {{el.params}} }, ref) {
+{{else}}
 export function {{name.pascal}}({ {{el.params}} }: {{name.pascal}}Props) {
+{{/if}}
 {{#if asChild}}
   const Comp = asChild ? {{slot.component}} : '{{element}}';
 
 {{/if}}
   return (
-    <{{el.tag}} {{el.classNameAttr}}{{el.typeAttr}} {...props}>
+    <{{el.tag}}{{#if profileIs.react.18}} ref={ref}{{/if}} {{el.classNameAttr}}{{el.typeAttr}} {...props}>
       {/* TODO(codegen): implement markup; compose existing UI primitives and use design tokens only */}
       {children}
     </{{el.tag}}>
   );
+{{#if profileIs.react.18}}
+});
+{{name.pascal}}.displayName = '{{name.pascal}}';
+{{else}}
 }
+{{/if}}

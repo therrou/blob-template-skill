@@ -26,10 +26,25 @@ const A11Y_NOTES = {
   h6: HEADING,
 };
 
-export function elementVars({ element, name, variants, asChild, cn }) {
+const REF_TYPES = {
+  button: 'HTMLButtonElement',
+  a: 'HTMLAnchorElement',
+  div: 'HTMLDivElement',
+  span: 'HTMLSpanElement',
+  ul: 'HTMLUListElement',
+  ol: 'HTMLOListElement',
+  li: 'HTMLLIElement',
+  form: 'HTMLFormElement',
+  label: 'HTMLLabelElement',
+  p: 'HTMLParagraphElement',
+};
+
+// React 18 function components don't receive `ref`, so they use forwardRef and props without ref.
+export function elementVars({ element, name, variants, asChild, cn, react18 = false }) {
   const isButton = element === 'button';
   const variantsFn = `${name.camel}Variants`;
-  const base = element === 'a' ? "Omit<ComponentProps<'a'>, 'href'> & { href: string }" : `ComponentProps<'${element}'>`;
+  const props = react18 ? 'ComponentPropsWithoutRef' : 'ComponentProps';
+  const base = element === 'a' ? `Omit<${props}<'a'>, 'href'> & { href: string }` : `${props}<'${element}'>`;
 
   let classNameAttr = 'className={className}';
   if (variants && cn) classNameAttr = `className={cn(${variantsFn}({ variant, size }), className)}`;
@@ -38,6 +53,7 @@ export function elementVars({ element, name, variants, asChild, cn }) {
 
   return {
     tag: asChild ? 'Comp' : element,
+    refType: REF_TYPES[element] ?? (/^h[1-6]$/.test(element) ? 'HTMLHeadingElement' : 'HTMLElement'),
     propsType: [base, variants && `VariantProps<typeof ${variantsFn}>`, asChild && '{ asChild?: boolean }'].filter(Boolean).join(' & '),
     params: ['className', variants && 'variant', variants && 'size', asChild && 'asChild = false', isButton && "type = 'button'", 'children', '...props']
       .filter(Boolean)
