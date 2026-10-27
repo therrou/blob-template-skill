@@ -7,14 +7,15 @@
       "out": "components",
       "options": {
         "element": { "type": "string", "required": true, "choices": ["div", "span", "section", "article", "aside", "nav", "header", "footer", "main", "ul", "ol", "li", "button", "a", "form", "label", "p", "h1", "h2", "h3", "h4", "h5", "h6"], "description": "Semantic root element. Pick the most meaningful one (button for actions, a for navigation, nav/section/article for regions); div only when nothing else fits." },
-        "variants": { "type": "boolean", "requires": ["class-variance-authority"], "description": "Add cva variant/size props (shadcn style) and export <name>Variants." },
-        "as-child": { "type": "boolean", "requires": [{ "package": "@radix-ui/react-slot|radix-ui", "when": { "primitives": ["radix", "none"] } }, { "package": "@base-ui/react", "when": { "primitives": "base" } }], "description": "Add asChild (Radix Slot) so callers can render it as their own element, e.g. a link." },
+        "variants": { "type": "boolean", "requires": [{ "package": "class-variance-authority", "when": { "styling": ["tailwind-3", "tailwind-4", "plain"] } }], "description": "Add cva variant/size props (shadcn style) and export <name>Variants." },
+        "as-child": { "type": "boolean", "supports": { "styling": ["tailwind-3", "tailwind-4", "plain"] }, "requires": [{ "package": "@radix-ui/react-slot|radix-ui", "when": { "primitives": ["radix", "none"] } }, { "package": "@base-ui/react", "when": { "primitives": "base" } }], "description": "Add asChild (Radix Slot) so callers can render it as their own element, e.g. a link." },
         "cn": { "type": "string", "description": "Import path of the repo's cn() helper. Auto-detected from components.json or lib/utils; pass only to override." },
         "with-test": { "type": "boolean", "description": "Add a Testing Library test." },
         "with-story": { "type": "boolean", "description": "Add a Storybook CSF3 story (requires .storybook/)." }
       },
       "files": [
-        { "template": "component/component.tsx.tpl", "path": "{{name.kebab}}/{{name.kebab}}.tsx" },
+        { "template": "component/component.tsx.tpl", "path": "{{name.kebab}}/{{name.kebab}}.tsx", "when": { "styling": ["tailwind-3", "tailwind-4", "plain"] } },
+        { "template": "component/component.styled.tsx.tpl", "path": "{{name.kebab}}/{{name.kebab}}.tsx", "when": { "styling": ["styled-components", "emotion"] } },
         { "template": "component/index.ts.tpl", "path": "{{name.kebab}}/index.ts" },
         { "template": "component/component.test.tsx.tpl", "path": "{{name.kebab}}/{{name.kebab}}.test.tsx", "when": "withTest" },
         { "template": "component/component.stories.tsx.tpl", "path": "{{name.kebab}}/{{name.kebab}}.stories.tsx", "when": "withStory" }
@@ -64,6 +65,7 @@
       ]
     },
     "form-field": {
+      "supports": { "primitives": ["radix", "none"], "styling": ["tailwind-3", "tailwind-4", "plain"] },
       "description": "react-hook-form field on the shadcn form primitives: label, control, description and error wired for a11y. Validation lives in the form's zod schema.",
       "out": "components",
       "requires": ["react-hook-form"],

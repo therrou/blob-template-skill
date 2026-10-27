@@ -175,6 +175,9 @@ async function planWithProfile({ skillDir, root, pack, generator, options, manif
       .map(([dim, { values }]) => [dim, Object.fromEntries(values.map((v) => [v, ctx.profile[dim] === v]))]),
   );
   ctx.mui = profile.flags.mui;
+  ctx.cssInJs = ['styled-components', 'emotion'].includes(ctx.profile.styling);
+  // CSS-in-JS needs client rendering in the App Router.
+  if (ctx.cssInJs && ctx.profile.app === 'next-app' && 'element' in (gen.options ?? {})) Object.assign(ctx, { client: true, server: false });
   // The Pages Router has no Server Components, so no RSC notes or 'use client'.
   if (ctx.profile.app === 'next-pages') Object.assign(ctx, { server: false, client: false });
 
@@ -219,7 +222,7 @@ async function planWithProfile({ skillDir, root, pack, generator, options, manif
   }
 
   if (ctx.element) {
-    ctx.el = elementVars({ element: ctx.element, name: ctx.name, variants: ctx.variants, asChild: ctx.asChild, cn: ctx.cn, react18: ctx.profile.react === '18', primitives: ctx.profile.primitives });
+    ctx.el = elementVars({ element: ctx.element, name: ctx.name, variants: ctx.variants, asChild: ctx.asChild, cn: ctx.cn, react18: ctx.profile.react === '18', primitives: ctx.profile.primitives, styling: ctx.profile.styling });
     // useRender is a hook, so a Base UI polymorphic component must be a client component in the App Router.
     if (ctx.el.baseUi && ctx.profile.app === 'next-app') Object.assign(ctx, { client: true, server: false });
   }

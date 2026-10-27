@@ -417,3 +417,36 @@ test('base primitives: React 18 passes the forwarded ref; next-app makes it a cl
   const bare = makeRepo({ deps: { react: '^19' }, files: { 'components.json': '{"style":"base-nova"}' } });
   assert.deepEqual(run(bare, 'react', 'component', '--name', 'X', '--element', 'button', '--as-child').json.missing, ['@base-ui/react']);
 });
+
+test('styled-components component: styled root, transient variant props, no cn/cva', () => {
+  const root = makeRepo({ deps: { react: '^19', 'styled-components': '^6' } });
+  const { json } = run(root, 'react', 'component', '--name', 'Badge', '--element', 'span', '--variants');
+  assert.equal(json.ok, true, JSON.stringify(json));
+  const src = read(root, 'components/badge/badge.tsx');
+  assert.match(src, /import styled from 'styled-components';/);
+  assert.match(src, /const Root = styled\.span<\{ \$variant: BadgeVariant; \$size: BadgeSize \}>`/);
+  assert.match(src, /\$variant=\{variant\}/);
+  assert.doesNotMatch(src, /cva|cn\(|className=/);
+});
+
+test('MUI repos import styled from @mui/material/styles; next-app css-in-js is a client component', () => {
+  const root = makeRepo({ deps: { next: '^16', react: '^19', '@mui/material': '^7', '@emotion/react': '^11', '@emotion/styled': '^11' }, dirs: ['app'] });
+  run(root, 'next', 'component', '--name', 'Panel', '--element', 'section');
+  const src = read(root, 'components/panel/panel.tsx');
+  assert.match(src, /^'use client';/);
+  assert.match(src, /import \{ styled \} from '@mui\/material\/styles';/);
+  assert.match(src, /const Root = styled\('section'\)/);
+});
+
+test('css-in-js refuses --as-child; form-field refuses non-radix or non-tailwind', () => {
+  const sc = makeRepo({ deps: { react: '^19', 'styled-components': '^6' } });
+  assert.match(run(sc, 'react', 'component', '--name', 'A', '--element', 'a', '--as-child').json.error, /--as-child is not supported with styling styled-components/);
+  assert.match(run(sc, 'react', 'form-field', '--name', 'Email', '--control', 'input').json.error, /does not support/);
+});
+
+test('tailwind + styled-components repo uses tailwind, and the flag switches', () => {
+  const root = makeRepo({ deps: { react: '^19', tailwindcss: '^4', 'styled-components': '^6' } });
+  assert.match(run(root, 'react', 'component', '--name', 'A', '--element', 'p', '--dry-run').json.profile.styling.value, /tailwind-4/);
+  run(root, 'react', 'component', '--name', 'B', '--element', 'p', '--profile', 'styling=styled-components');
+  assert.match(read(root, 'components/b/b.tsx'), /styled-components/);
+});

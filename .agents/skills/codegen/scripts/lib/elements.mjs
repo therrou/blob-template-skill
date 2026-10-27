@@ -48,7 +48,7 @@ const REACT_IMPORTS = {
 
 // React 18 function components don't receive `ref`, so they use forwardRef and props without ref.
 // Polymorphism is Radix Slot + asChild, or Base UI's useRender + render prop when primitives are Base UI.
-export function elementVars({ element, name, variants, asChild, cn, react18 = false, primitives = 'radix' }) {
+export function elementVars({ element, name, variants, asChild, cn, react18 = false, primitives = 'radix', styling = 'plain' }) {
   const isButton = element === 'button';
   const baseUi = Boolean(asChild) && primitives === 'base';
   const variantsFn = `${name.camel}Variants`;
@@ -75,6 +75,14 @@ export function elementVars({ element, name, variants, asChild, cn, react18 = fa
     refType: REF_TYPES[element] ?? (/^h[1-6]$/.test(element) ? 'HTMLHeadingElement' : 'HTMLElement'),
     propsType: [base, variants && `VariantProps<typeof ${variantsFn}>`, asChild && !baseUi && '{ asChild?: boolean }'].filter(Boolean).join(' & '),
     params: ['className', variants && 'variant', variants && 'size', asChild && (baseUi ? 'render' : 'asChild = false'), isButton && "type = 'button'", 'children', '...props']
+      .filter(Boolean)
+      .join(', '),
+    baseProps: base,
+    // CSS-in-JS: styled root with transient $variant/$size props; Emotion and MUI use the styled('el') form.
+    styledOpen:
+      (styling === 'styled-components' ? `styled.${element}` : `styled('${element}')`) +
+      (variants ? `<{ $variant: ${name.pascal}Variant; $size: ${name.pascal}Size }>` : ''),
+    styledParams: [variants && "variant = 'default'", variants && "size = 'default'", isButton && "type = 'button'", 'children', '...props']
       .filter(Boolean)
       .join(', '),
     classNameAttr,
