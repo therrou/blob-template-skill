@@ -283,10 +283,9 @@
     "id": "ask-before-installing-select",
     "fixture": "next-app-tw4",
     "prompt": "Add a country select field for the signup form.",
-    "generator": "form-field",
-    "noNewFiles": "^components/ui/",
+    "noNewFiles": ".",
     "noModified": "package\\.json",
-    "answer": "install|shadcn|select",
+    "answer": "shadcn(@[\\w.]+)? add select",
     "dryRun": [
       "next",
       "form-field",
