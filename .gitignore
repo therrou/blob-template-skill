@@ -3,3 +3,4 @@ node_modules/
 .superpowers/
 graft/
 .claude/settings.local.json
+evals/results/

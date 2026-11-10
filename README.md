@@ -137,12 +137,32 @@ Recommended existing ESLint rules that match the conventions:
 
 ## Behavior evals
 
-`npm run eval` checks the main assumption: that an agent with this skill runs the generator instead of hand-writing files. It copies `evals/fixture/` (a minimal Next + shadcn app) to a temp folder per case, runs `claude -p` with the case prompt, and checks the new files, the generator calls and `check-tokens`. It costs tokens and isn't deterministic, so it runs by hand, not in CI.
+`npm run eval` checks the main assumption: an agent with this skill runs the generator instead of hand-writing files, keeps what it generated, and stops when it should. Each run copies one sample app from `evals/fixtures/` to a temp folder, runs `claude -p` with the case prompt, and checks the result. It costs tokens and isn't deterministic, so it runs by hand, several times per case, not in CI.
+
+Sample apps: `next-app-tw4` (Next 16, Tailwind 4, shadcn/Radix), `next-pages-tw3` (Next 14 Pages Router, React 18, Tailwind 3), `vite-react18-styled` (Vite SPA, styled-components, `src/`, a barrel), `next-base-ui` (shadcn on Base UI), `react17-legacy` (outside the support matrix).
+
+Each case in `evals/cases.json` picks a `fixture` and a `prompt`, then any of these checks:
+
+| Field | Checks |
+|---|---|
+| `generator` / `noGenerator` | a generator call was (or wasn't) made |
+| `newFiles` / `noNewFiles` | new files that must (or must not) exist |
+| `modified` / `noModified` | existing files that must (or must not) be edited |
+| `contains` | `{ file, pattern, absent? }` over new and edited files |
+| `answer` | the agent's final message matches (e.g. it says why it stopped, or asks before installing) |
+| `minKept` | share of the generated skeleton the agent must keep (default 0.4, only for skeletons of 8+ real lines). Each generator call is replayed in a clean copy and compared; generated function and const exports must also survive in every file |
+| `dryRun` / `dryRunError` | used only by `npm test`, which checks every case against its sample app without an agent |
+
+`check-tokens` runs on every new or edited file. A timeout or crash is reported as such, not as a wrong answer.
 
 ```bash
-npm run eval                      # all cases
-npm run eval -- --case reuse-button --keep
+npm run eval -- --runs 3 --jobs 4            # every case three times, four at a time
+npm run eval -- --case reuse-button --keep   # keep the temp folder to inspect it
+npm run eval -- --fixture next-pages-tw3 --model sonnet
+npm run eval -- --compare evals/results/<a>/summary.json evals/results/<b>/summary.json
 ```
+
+Each run writes `evals/results/<date>-v<version>-<model>/`: `summary.json` (pass rate per case, cost, turns, tool calls, kept ratio) and one transcript per run. The folder is git-ignored; keep the summaries you want as a baseline.
 
 ## Roadmap
 

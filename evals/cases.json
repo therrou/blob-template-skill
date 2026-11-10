@@ -3,49 +3,322 @@
     "id": "badge-variants",
     "prompt": "Create a Badge component with success, warning and neutral variants in sm and md sizes.",
     "generator": "component|client-component",
-    "newFiles": ["^components/[a-z-]*badge[a-z-]*/[a-z-]*badge[a-z-]*\\.tsx$"],
-    "contains": [{ "file": "badge[a-z-]*\\.tsx$", "pattern": "cva\\(" }],
-    "dryRun": ["next", "component", "--name", "Badge", "--element", "span", "--variants"]
+    "newFiles": [
+      "^components/[a-z-]*badge[a-z-]*/[a-z-]*badge[a-z-]*\\.tsx$"
+    ],
+    "contains": [
+      {
+        "file": "badge[a-z-]*\\.tsx$",
+        "pattern": "cva\\("
+      }
+    ],
+    "dryRun": [
+      "next",
+      "component",
+      "--name",
+      "Badge",
+      "--element",
+      "span",
+      "--variants"
+    ],
+    "fixture": "next-app-tw4"
   },
   {
     "id": "reuse-button",
     "prompt": "I need a Button component with primary and outline styles for the settings page.",
     "noGenerator": true,
     "noNewFiles": "^components/(?!ui/)",
-    "dryRun": ["next", "component", "--name", "Button", "--element", "button", "--variants"]
+    "dryRun": [
+      "next",
+      "component",
+      "--name",
+      "Button",
+      "--element",
+      "button",
+      "--variants"
+    ],
+    "fixture": "next-app-tw4"
   },
   {
     "id": "newsletter-email-field",
     "prompt": "Add an email field component for the newsletter signup form.",
     "generator": "form-field",
-    "newFiles": ["^components/[a-z-]*email[a-z-]*/"],
-    "contains": [{ "file": "email[a-z-]*\\.tsx$", "pattern": "FormField" }],
-    "dryRun": ["next", "form-field", "--name", "EmailField", "--control", "input"]
+    "newFiles": [
+      "^components/[a-z-]*email[a-z-]*/"
+    ],
+    "contains": [
+      {
+        "file": "email[a-z-]*\\.tsx$",
+        "pattern": "FormField"
+      }
+    ],
+    "dryRun": [
+      "next",
+      "form-field",
+      "--name",
+      "EmailField",
+      "--control",
+      "input"
+    ],
+    "fixture": "next-app-tw4"
   },
   {
     "id": "footer-nav",
     "prompt": "Create a FooterNav component that renders the footer links it receives as props.",
     "generator": "component|client-component",
-    "newFiles": ["^components/footer-nav/footer-nav\\.tsx$"],
-    "contains": [
-      { "file": "footer-nav\\.tsx$", "pattern": "<nav\\b" },
-      { "file": "footer-nav\\.tsx$", "pattern": "aria-label" }
+    "newFiles": [
+      "^components/footer-nav/footer-nav\\.tsx$"
     ],
-    "dryRun": ["next", "component", "--name", "FooterNav", "--element", "nav"]
+    "contains": [
+      {
+        "file": "footer-nav\\.tsx$",
+        "pattern": "<nav\\b"
+      },
+      {
+        "file": "footer-nav\\.tsx$",
+        "pattern": "aria-label"
+      }
+    ],
+    "dryRun": [
+      "next",
+      "component",
+      "--name",
+      "FooterNav",
+      "--element",
+      "nav"
+    ],
+    "fixture": "next-app-tw4"
   },
   {
     "id": "debounce-hook",
     "prompt": "Add a hook that debounces a value.",
     "generator": "hook",
-    "newFiles": ["^hooks/use-[a-z-]*debounce[a-z-]*\\.ts$"],
-    "dryRun": ["next", "hook", "--name", "useDebouncedValue"]
+    "newFiles": [
+      "^hooks/use-[a-z-]*debounce[a-z-]*\\.ts$"
+    ],
+    "dryRun": [
+      "next",
+      "hook",
+      "--name",
+      "useDebouncedValue"
+    ],
+    "fixture": "next-app-tw4"
   },
   {
     "id": "pricing-route",
     "prompt": "Add a /pricing page.",
     "generator": "route",
-    "newFiles": ["^app/pricing/page\\.tsx$"],
-    "contains": [{ "file": "^app/pricing/page\\.tsx$", "pattern": "'use client'", "absent": true }],
-    "dryRun": ["next", "route", "--name", "pricing"]
+    "newFiles": [
+      "^app/pricing/page\\.tsx$"
+    ],
+    "contains": [
+      {
+        "file": "^app/pricing/page\\.tsx$",
+        "pattern": "'use client'",
+        "absent": true
+      }
+    ],
+    "dryRun": [
+      "next",
+      "route",
+      "--name",
+      "pricing"
+    ],
+    "fixture": "next-app-tw4"
+  },
+  {
+    "id": "pages-about-route",
+    "fixture": "next-pages-tw3",
+    "prompt": "Add an /about page.",
+    "generator": "route",
+    "newFiles": [
+      "^pages/about\\.tsx$"
+    ],
+    "noNewFiles": "^app/",
+    "dryRun": [
+      "next",
+      "route",
+      "--name",
+      "about"
+    ]
+  },
+  {
+    "id": "pages-health-api",
+    "fixture": "next-pages-tw3",
+    "prompt": "Add a /api/health endpoint that returns the service status as JSON.",
+    "generator": "api-route",
+    "newFiles": [
+      "^pages/api/health\\.ts$"
+    ],
+    "noNewFiles": "^app/",
+    "dryRun": [
+      "next",
+      "api-route",
+      "--name",
+      "health"
+    ]
+  },
+  {
+    "id": "pages-react18-profile-card",
+    "fixture": "next-pages-tw3",
+    "prompt": "Create a ProfileCard component that shows a user avatar, name and role.",
+    "generator": "component|client-component",
+    "newFiles": [
+      "^components/profile-card/profile-card\\.tsx$"
+    ],
+    "contains": [
+      {
+        "file": "profile-card\\.tsx$",
+        "pattern": "forwardRef"
+      }
+    ],
+    "dryRun": [
+      "next",
+      "component",
+      "--name",
+      "ProfileCard",
+      "--element",
+      "article"
+    ]
+  },
+  {
+    "id": "styled-stat-card-barrel",
+    "fixture": "vite-react18-styled",
+    "prompt": "Create a StatCard component that shows a label and a numeric value.",
+    "generator": "component",
+    "newFiles": [
+      "^src/components/stat-card/stat-card\\.tsx$"
+    ],
+    "modified": [
+      "^src/components/index\\.ts$"
+    ],
+    "contains": [
+      {
+        "file": "stat-card\\.tsx$",
+        "pattern": "styled\\."
+      },
+      {
+        "file": "^src/components/index\\.ts$",
+        "pattern": "stat-card"
+      },
+      {
+        "file": "stat-card\\.tsx$",
+        "pattern": "className=\"",
+        "absent": true
+      }
+    ],
+    "dryRun": [
+      "react",
+      "component",
+      "--name",
+      "StatCard",
+      "--element",
+      "section"
+    ]
+  },
+  {
+    "id": "spa-local-storage-hook",
+    "fixture": "vite-react18-styled",
+    "prompt": "Add a hook that keeps a value in sync with localStorage.",
+    "generator": "hook",
+    "newFiles": [
+      "^src/hooks/use-[a-z-]+\\.ts$"
+    ],
+    "noNewFiles": "^hooks/",
+    "dryRun": [
+      "react",
+      "hook",
+      "--name",
+      "useLocalStorage"
+    ]
+  },
+  {
+    "id": "base-ui-call-to-action",
+    "fixture": "next-base-ui",
+    "prompt": "Create a CallToAction component with primary and subtle variants that callers can render as a link or as their own element.",
+    "generator": "component|client-component",
+    "newFiles": [
+      "^components/call-to-action/call-to-action\\.tsx$"
+    ],
+    "contains": [
+      {
+        "file": "call-to-action\\.tsx$",
+        "pattern": "useRender"
+      },
+      {
+        "file": "call-to-action\\.tsx$",
+        "pattern": "asChild|react-slot",
+        "absent": true
+      }
+    ],
+    "dryRun": [
+      "next",
+      "component",
+      "--name",
+      "CallToAction",
+      "--element",
+      "a",
+      "--variants",
+      "--as-child"
+    ]
+  },
+  {
+    "id": "legacy-react17-refusal",
+    "fixture": "react17-legacy",
+    "prompt": "Create a Banner component that shows an announcement message.",
+    "noNewFiles": "^(src/components/|\\.codegen/)",
+    "noModified": "package\\.json",
+    "answer": "support|react 17|react 18",
+    "dryRun": [
+      "react",
+      "component",
+      "--name",
+      "Banner",
+      "--element",
+      "section"
+    ],
+    "dryRunError": "not supported"
+  },
+  {
+    "id": "ask-before-installing-select",
+    "fixture": "next-app-tw4",
+    "prompt": "Add a country select field for the signup form.",
+    "generator": "form-field",
+    "noNewFiles": "^components/ui/",
+    "noModified": "package\\.json",
+    "answer": "install|shadcn|select",
+    "dryRun": [
+      "next",
+      "form-field",
+      "--name",
+      "CountryField",
+      "--control",
+      "select"
+    ],
+    "dryRunError": "Missing requirements"
+  },
+  {
+    "id": "edit-existing-button",
+    "fixture": "next-app-tw4",
+    "prompt": "Add a destructive variant to the Button component.",
+    "noGenerator": true,
+    "noNewFiles": ".",
+    "modified": [
+      "^components/ui/button\\.tsx$"
+    ],
+    "contains": [
+      {
+        "file": "^components/ui/button\\.tsx$",
+        "pattern": "destructive"
+      }
+    ]
+  },
+  {
+    "id": "explain-cn-no-files",
+    "fixture": "next-app-tw4",
+    "prompt": "What does the cn helper in lib/utils.ts do? Just explain, no changes.",
+    "noGenerator": true,
+    "noNewFiles": ".",
+    "noModified": "."
   }
 ]
