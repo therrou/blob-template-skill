@@ -1,6 +1,6 @@
 # codegen 0.4.0: project profile and targets — design
 
-Agreed on 2026-10-27. Second of the projects that came out of the plop review. It comes before the new generator families (project 3 in the updated order), which will rely on it. Research behind it: `reports/React Next codegen conventions 2026.md`.
+Agreed on 2026-10-27. Second of the projects that came out of the plop review. It comes before the new generator families (project 3 in the updated order), which will rely on it. Research behind it: `docs/research/react-next-conventions-2026.md`.
 
 ## Intent
 
