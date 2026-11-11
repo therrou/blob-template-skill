@@ -4,7 +4,8 @@
   "type": "module",
   "scripts": {
     "test": "node --test test/*.test.mjs",
-    "eval": "node evals/run.mjs"
+    "eval": "node evals/run.mjs",
+    "typecheck": "node typecheck/run.mjs"
   },
   "engines": {
     "node": ">=20"

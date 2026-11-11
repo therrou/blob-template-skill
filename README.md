@@ -164,6 +164,23 @@ npm run eval -- --compare evals/results/<a>/summary.json evals/results/<b>/summa
 
 Each run writes `evals/results/<date>-v<version>-<model>/`: `summary.json` (pass rate per case, cost, turns, tool calls, kept ratio) and one transcript per run. The folder is git-ignored. Baselines worth keeping live in `evals/baselines/` (`v0.4.0-sonnet.json`: 48/48); compare a new run against one with `--compare`.
 
+## Generated-code type check
+
+`npm run typecheck` checks that what the generator writes compiles against the real packages. For each supported sample app in `evals/fixtures/`, it:
+
+1. Installs the app's dependencies, plus types, vitest, Testing Library and Storybook. They are cached in `~/.cache/codegen-typecheck/` and reinstalled only when the dependency list changes, so the first run needs network.
+2. Runs every generator in a fresh copy, with every `--element` and every `--variants` / `--as-child` combination, plus `--with-test` and `--with-story`. That's about 200 calls and 480 files per app.
+3. Runs `tsc --noEmit` in strict mode and reports each error under the generator call that wrote the file.
+
+Combinations the generator refuses (for example, `--as-child` with styled-components) are reported as skipped, not failed. No agent is involved, so it costs no tokens. The full run takes about two minutes once the dependencies are cached.
+
+```bash
+npm run typecheck
+npm run typecheck -- --stack next-pages-tw3 --keep   # keep the workspace to inspect it
+```
+
+The form-field primitives (`select`, `checkbox`, `textarea`) are added as thin Radix re-exports, not the full shadcn sources.
+
 ## Roadmap
 
 | Pack | Status |

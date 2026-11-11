@@ -1,0 +1,177 @@
+#!/usr/bin/env node
+// Does the generated code type-check against the real packages? For each supported sample app: install its
+// dependencies once (cached), run every generator with every element and option combination, then `tsc --noEmit`.
+// Needs network on the first run per stack.
+//
+//   node typecheck/run.mjs [--stack <fixture>] [--keep]
+import crypto from 'node:crypto';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import { spawnSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
+
+import { attribute, matrix, parseTscErrors } from './lib.mjs';
+
+const here = path.dirname(fileURLToPath(import.meta.url));
+const repoRoot = path.resolve(here, '..');
+const fixturesDir = path.join(repoRoot, 'evals', 'fixtures');
+const generate = path.join(repoRoot, '.agents/skills/codegen/scripts/generate.mjs');
+const cacheRoot = path.join(os.homedir(), '.cache', 'codegen-typecheck');
+
+const args = process.argv.slice(2);
+const only = args.includes('--stack') ? args[args.indexOf('--stack') + 1] : undefined;
+const keep = args.includes('--keep');
+
+// What generated code imports beyond the app's own dependencies: types, test and story tooling.
+const TOOLING = {
+  typescript: '^5.6.0',
+  '@types/node': '^22.0.0',
+  vitest: '^3.0.0',
+  '@testing-library/react': '^16.0.0',
+  '@testing-library/dom': '^10.0.0',
+  storybook: '^10.0.0',
+  '@storybook/react': '^10.0.0',
+};
+const reactTypes = (major) => ({ '@types/react': `^${major}.0.0`, '@types/react-dom': `^${major}.0.0` });
+
+// shortcut: plain re-exports of the Radix parts instead of the full shadcn sources; same prop types, minus shadcn's styling wrappers.
+const RADIX_PRIMITIVES = {
+  'components/ui/select.tsx': `import * as SelectPrimitive from '@radix-ui/react-select';
+
+export const Select = SelectPrimitive.Root;
+export const SelectTrigger = SelectPrimitive.Trigger;
+export const SelectValue = SelectPrimitive.Value;
+export const SelectContent = SelectPrimitive.Content;
+export const SelectItem = SelectPrimitive.Item;
+`,
+  'components/ui/checkbox.tsx': `import * as CheckboxPrimitive from '@radix-ui/react-checkbox';
+
+export const Checkbox = CheckboxPrimitive.Root;
+`,
+  'components/ui/textarea.tsx': `import type { ComponentProps } from 'react';
+
+export function Textarea(props: ComponentProps<'textarea'>) {
+  return <textarea {...props} />;
+}
+`,
+};
+const RADIX_DEPS = { '@radix-ui/react-select': '^2.1.0', '@radix-ui/react-checkbox': '^1.1.0' };
+
+// The supported sample apps. react17-legacy is outside the matrix and has nothing to check.
+const STACKS = [
+  { fixture: 'next-app-tw4', pack: 'next', deps: { ...reactTypes(19), ...RADIX_DEPS, 'server-only': '^0.0.1' }, files: RADIX_PRIMITIVES },
+  { fixture: 'next-pages-tw3', pack: 'next', deps: { ...reactTypes(18), ...RADIX_DEPS, 'server-only': '^0.0.1' }, files: RADIX_PRIMITIVES },
+  { fixture: 'next-base-ui', pack: 'next', deps: { ...reactTypes(19), 'server-only': '^0.0.1' }, files: {} },
+  { fixture: 'vite-react18-styled', pack: 'react', deps: reactTypes(18), files: {} },
+];
+
+const COMMON_FILES = {
+  '.storybook/main.ts': "export default { stories: ['../**/*.stories.tsx'], framework: '@storybook/react-vite' };\n",
+  'typecheck-env.d.ts': "declare module '*.css';\n",
+};
+
+const run = (cmd, argv, cwd) => spawnSync(cmd, argv, { cwd, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
+
+function packageJson(stack) {
+  const pkg = JSON.parse(fs.readFileSync(path.join(fixturesDir, stack.fixture, 'package.json'), 'utf8'));
+  pkg.devDependencies = { ...pkg.devDependencies, ...TOOLING, ...stack.deps };
+  return pkg;
+}
+
+// node_modules per stack, keyed by the merged package.json so a dependency change reinstalls.
+function installed(stack, pkg) {
+  const text = JSON.stringify(pkg, null, 2);
+  const dir = path.join(cacheRoot, `${stack.fixture}-${crypto.createHash('sha256').update(text).digest('hex').slice(0, 12)}`);
+  if (fs.existsSync(path.join(dir, 'node_modules', '.package-lock.json'))) return dir;
+  fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(path.join(dir, 'package.json'), text);
+  console.log(`  installing dependencies into ${dir} ...`);
+  const r = run('npm', ['install', '--no-audit', '--no-fund', '--ignore-scripts', '--legacy-peer-deps', '--loglevel=error'], dir);
+  if (r.status !== 0) throw new Error(`npm install failed for ${stack.fixture}:\n${r.stderr}`);
+  return dir;
+}
+
+function workspace(stack, pkg, cacheDir) {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), `codegen-typecheck-${stack.fixture}-`));
+  fs.cpSync(path.join(fixturesDir, stack.fixture), dir, { recursive: true });
+  fs.writeFileSync(path.join(dir, 'package.json'), JSON.stringify(pkg, null, 2));
+  for (const [file, content] of Object.entries({ ...COMMON_FILES, ...stack.files })) {
+    if (fs.existsSync(path.join(dir, file))) continue;
+    fs.mkdirSync(path.dirname(path.join(dir, file)), { recursive: true });
+    fs.writeFileSync(path.join(dir, file), content);
+  }
+  fs.symlinkSync(path.join(cacheDir, 'node_modules'), path.join(dir, 'node_modules'), 'dir');
+  const srcDir = fs.existsSync(path.join(dir, 'src'));
+  const tsconfig = {
+    compilerOptions: {
+      target: 'ES2022',
+      lib: ['dom', 'dom.iterable', 'ES2023'],
+      module: 'esnext',
+      moduleResolution: 'bundler',
+      jsx: 'react-jsx',
+      strict: true,
+      noEmit: true,
+      skipLibCheck: true,
+      esModuleInterop: true,
+      isolatedModules: true,
+      resolveJsonModule: true,
+      baseUrl: '.',
+      paths: { '@/*': [srcDir ? './src/*' : './*'] },
+    },
+    include: ['**/*.ts', '**/*.tsx'],
+    exclude: ['node_modules'],
+  };
+  fs.writeFileSync(path.join(dir, 'tsconfig.typecheck.json'), JSON.stringify(tsconfig, null, 2));
+  return dir;
+}
+
+function checkStack(stack) {
+  console.log(`\n== ${stack.fixture} (${stack.pack} pack)`);
+  const pkg = packageJson(stack);
+  const dir = workspace(stack, pkg, installed(stack, pkg));
+
+  const list = JSON.parse(run(process.execPath, [generate, '--list', stack.pack], dir).stdout);
+  const filesByCall = [];
+  const skipped = new Map();
+  const genErrors = [];
+  for (const call of matrix(stack.pack, list.packs[stack.pack].generators)) {
+    const out = JSON.parse(run(process.execPath, [generate, ...call, '--root', dir], dir).stdout);
+    const label = call.join(' ');
+    if (out.ok) filesByCall.push({ call: label, files: [...out.created, ...out.modified] });
+    else if (/not supported|does not support/.test(out.error ?? '')) skipped.set(out.error, (skipped.get(out.error) ?? 0) + 1);
+    else genErrors.push(`${label}: ${out.error ?? JSON.stringify(out)}`);
+  }
+
+  const tsc = run(process.execPath, [path.join(dir, 'node_modules/typescript/bin/tsc'), '-p', 'tsconfig.typecheck.json', '--pretty', 'false'], dir);
+  const errors = attribute(parseTscErrors(tsc.stdout), filesByCall);
+  const files = filesByCall.reduce((n, c) => n + c.files.length, 0);
+
+  console.log(`  ${filesByCall.length} generator calls, ${files} files written, ${[...skipped.values()].reduce((a, b) => a + b, 0)} skipped as unsupported`);
+  for (const [reason, n] of skipped) console.log(`    skipped ${n}x: ${reason}`);
+  for (const e of genErrors) console.log(`  GENERATOR ERROR ${e}`);
+  const groups = new Map();
+  for (const e of errors) {
+    const key = e.call ?? '(sample app code)';
+    groups.set(key, [...(groups.get(key) ?? []), e]);
+  }
+  for (const [call, es] of groups) {
+    console.log(`  TYPE ERRORS from ${call}`);
+    for (const e of es.slice(0, 5)) console.log(`    ${e.file}:${e.line} ${e.code} ${e.message.split('\n').join('\n      ')}`);
+    if (es.length > 5) console.log(`    ... and ${es.length - 5} more`);
+  }
+  if (tsc.status !== 0 && !errors.length) console.log(`  tsc failed without parsable errors:\n${tsc.stdout}${tsc.stderr}`);
+  const pass = !genErrors.length && tsc.status === 0;
+  console.log(`  ${pass ? 'PASS' : 'FAIL'}: ${errors.length} type errors${keep || !pass ? `  workspace: ${dir}` : ''}`);
+  if (pass && !keep) fs.rmSync(dir, { recursive: true, force: true });
+  return pass;
+}
+
+const stacks = STACKS.filter((s) => !only || s.fixture === only);
+if (!stacks.length) {
+  console.error(`No stack "${only}". Stacks: ${STACKS.map((s) => s.fixture).join(', ')}`);
+  process.exit(1);
+}
+const results = stacks.map(checkStack);
+console.log(`\n${results.filter(Boolean).length}/${results.length} stacks type-check`);
+process.exitCode = results.every(Boolean) ? 0 : 1;
