@@ -14,6 +14,7 @@ type {{name.pascal}}PageProps = {
 // TODO(codegen): add generateMetadata({ params }) if the title depends on params
 export default async function {{name.pascal}}Page({ params }: {{name.pascal}}PageProps) {
   const { {{paramsList}} } = {{#if asyncParams}}await params{{else}}params{{/if}};
+  {{paramsVoid}}
 {{else}}
 export default async function {{name.pascal}}Page() {
 {{/if}}

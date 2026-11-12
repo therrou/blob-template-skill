@@ -3,7 +3,10 @@
 // dependencies once (cached), run every generator with every element and option combination, then `tsc --noEmit`.
 // Needs network on the first run per stack.
 //
-//   node typecheck/run.mjs [--stack <fixture>] [--keep]
+// Then ESLint on the generated files: typescript-eslint, React hooks (incl. the React Compiler rules), jsx-a11y,
+// and the Next plugin on Next stacks.
+//
+//   node typecheck/run.mjs [--stack <name>] [--keep]
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import os from 'node:os';
@@ -11,7 +14,7 @@ import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
-import { attribute, matrix, parseTscErrors } from './lib.mjs';
+import { attribute, matrix, parseEslint, parseTscErrors } from './lib.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(here, '..');
@@ -32,7 +35,24 @@ const TOOLING = {
   '@testing-library/dom': '^10.0.0',
   storybook: '^10.0.0',
   '@storybook/react': '^10.0.0',
+  eslint: '^9.0.0',
+  'typescript-eslint': '^8.0.0',
+  'eslint-plugin-react-hooks': '^7.0.0',
+  'eslint-plugin-jsx-a11y': '^6.10.0',
+  '@next/eslint-plugin-next': '^16.0.0',
 };
+
+// The lint rules most React/Next repos run (what eslint-config-next bundles, minus the React plugin's style rules).
+const eslintConfig = (next) => `import tseslint from 'typescript-eslint';
+import reactHooks from 'eslint-plugin-react-hooks';
+import jsxA11y from 'eslint-plugin-jsx-a11y';
+${next ? "import nextPlugin from '@next/eslint-plugin-next';\n" : ''}
+export default [
+  ...tseslint.configs.recommended,
+  reactHooks.configs.flat['recommended-latest'],
+  jsxA11y.flatConfigs.recommended,
+${next ? "  { ...nextPlugin.configs['core-web-vitals'], settings: { next: { rootDir: '.' } } },\n" : ''}];
+`;
 const reactTypes = (major) => ({ '@types/react': `^${major}.0.0`, '@types/react-dom': `^${major}.0.0` });
 
 // shortcut: plain re-exports of the Radix parts instead of the full shadcn sources; same prop types, minus shadcn's styling wrappers.
@@ -134,6 +154,7 @@ function workspace(stack, pkg, cacheDir) {
     exclude: ['node_modules'],
   };
   fs.writeFileSync(path.join(dir, 'tsconfig.typecheck.json'), JSON.stringify(tsconfig, null, 2));
+  fs.writeFileSync(path.join(dir, 'eslint.config.mjs'), eslintConfig(stack.pack === 'next'));
   return dir;
 }
 
@@ -155,27 +176,39 @@ function checkStack(stack) {
   }
 
   const tsc = run(process.execPath, [path.join(dir, 'node_modules/typescript/bin/tsc'), '-p', 'tsconfig.typecheck.json', '--pretty', 'false'], dir);
-  const errors = attribute(parseTscErrors(tsc.stdout), filesByCall);
-  const files = filesByCall.reduce((n, c) => n + c.files.length, 0);
+  const typeErrors = attribute(parseTscErrors(tsc.stdout), filesByCall);
+  const generated = [...new Set(filesByCall.flatMap((c) => c.files))].filter((f) => /\.tsx?$/.test(f));
+  const eslint = run(process.execPath, [path.join(dir, 'node_modules/eslint/bin/eslint.js'), '--format', 'json', ...generated], dir);
+  const lint = attribute(parseEslint(eslint.stdout, fs.realpathSync(dir)), filesByCall);
+  const lintErrors = lint.filter((e) => e.severity === 2);
+  const lintWarnings = lint.filter((e) => e.severity !== 2);
 
-  console.log(`  ${filesByCall.length} generator calls, ${files} files written, ${[...skipped.values()].reduce((a, b) => a + b, 0)} skipped as unsupported`);
+  console.log(`  ${filesByCall.length} generator calls, ${generated.length} code files, ${[...skipped.values()].reduce((a, b) => a + b, 0)} skipped as unsupported`);
   for (const [reason, n] of skipped) console.log(`    skipped ${n}x: ${reason}`);
   for (const e of genErrors) console.log(`  GENERATOR ERROR ${e}`);
+  report('TYPE ERRORS', typeErrors);
+  report('LINT ERRORS', lintErrors);
+  report('LINT WARNINGS', lintWarnings);
+  if (tsc.status !== 0 && !typeErrors.length) console.log(`  tsc failed without parsable errors:\n${tsc.stdout}${tsc.stderr}`);
+  if (eslint.status === 2) console.log(`  eslint crashed:\n${eslint.stderr}`);
+  const pass = !genErrors.length && tsc.status === 0 && eslint.status !== 2 && !lintErrors.length;
+  console.log(`  ${pass ? 'PASS' : 'FAIL'}: ${typeErrors.length} type errors, ${lintErrors.length} lint errors, ${lintWarnings.length} lint warnings${keep || !pass ? `  workspace: ${dir}` : ''}`);
+  if (pass && !keep) fs.rmSync(dir, { recursive: true, force: true });
+  return pass;
+}
+
+// Errors grouped by the generator call that wrote the file, a few examples each.
+function report(title, errors) {
   const groups = new Map();
   for (const e of errors) {
     const key = e.call ?? '(sample app code)';
     groups.set(key, [...(groups.get(key) ?? []), e]);
   }
   for (const [call, es] of groups) {
-    console.log(`  TYPE ERRORS from ${call}`);
+    console.log(`  ${title} from ${call}`);
     for (const e of es.slice(0, 5)) console.log(`    ${e.file}:${e.line} ${e.code} ${e.message.split('\n').join('\n      ')}`);
     if (es.length > 5) console.log(`    ... and ${es.length - 5} more`);
   }
-  if (tsc.status !== 0 && !errors.length) console.log(`  tsc failed without parsable errors:\n${tsc.stdout}${tsc.stderr}`);
-  const pass = !genErrors.length && tsc.status === 0;
-  console.log(`  ${pass ? 'PASS' : 'FAIL'}: ${errors.length} type errors${keep || !pass ? `  workspace: ${dir}` : ''}`);
-  if (pass && !keep) fs.rmSync(dir, { recursive: true, force: true });
-  return pass;
 }
 
 const stacks = STACKS.filter((s) => !only || s.name === only);
@@ -184,5 +217,5 @@ if (!stacks.length) {
   process.exit(1);
 }
 const results = stacks.map(checkStack);
-console.log(`\n${results.filter(Boolean).length}/${results.length} stacks type-check`);
+console.log(`\n${results.filter(Boolean).length}/${results.length} stacks type-check and lint clean`);
 process.exitCode = results.every(Boolean) ? 0 : 1;

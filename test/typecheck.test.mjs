@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 
-import { attribute, matrix, parseTscErrors } from '../typecheck/lib.mjs';
+import { attribute, matrix, parseEslint, parseTscErrors } from '../typecheck/lib.mjs';
 import { cli } from './helpers.mjs';
 
 test('matrix covers every generator, element and option combination with unique names', () => {
@@ -33,4 +33,16 @@ test('parseTscErrors reads errors with continuation lines; attribute pins them o
   assert.equal(errors.length, 2);
   assert.deepEqual(errors[0], { file: 'components/a/a.tsx', line: 3, code: 'TS2322', message: "Type 'string' is not assignable to type 'number'.\n  Type 'x' is missing.", call: 'next component --name A' });
   assert.equal(errors[1].call, null);
+});
+
+test('parseEslint makes paths repo-relative and keeps severity', () => {
+  const json = JSON.stringify([
+    { filePath: '/ws/hooks/use-x.ts', messages: [{ ruleId: 'react-hooks/rules-of-hooks', severity: 2, message: 'conditional', line: 4 }] },
+    { filePath: '/ws/app/page.tsx', messages: [{ ruleId: null, severity: 1, message: 'parse', line: 1 }] },
+  ]);
+  assert.deepEqual(parseEslint(json, '/ws'), [
+    { file: 'hooks/use-x.ts', line: 4, code: 'react-hooks/rules-of-hooks', message: 'conditional', severity: 2 },
+    { file: 'app/page.tsx', line: 1, code: 'eslint', message: 'parse', severity: 1 },
+  ]);
+  assert.deepEqual(parseEslint('', '/ws'), []);
 });

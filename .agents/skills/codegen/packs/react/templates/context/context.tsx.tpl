@@ -4,9 +4,8 @@
 {{/if}}
 import { createContext, useContext, type ReactNode } from 'react';
 
-export type {{name.pascal}}ContextValue = {
-  // TODO(codegen): describe the shared state and actions
-};
+// TODO(codegen): describe the shared state and actions
+export type {{name.pascal}}ContextValue = Record<string, never>;
 
 const {{name.pascal}}Context = createContext<{{name.pascal}}ContextValue | null>(null);
 

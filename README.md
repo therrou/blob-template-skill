@@ -170,7 +170,7 @@ Each run writes `evals/results/<date>-v<version>-<model>/`: `summary.json` (pass
 
 1. Installs the app's dependencies, plus types, vitest, Testing Library and Storybook. They are cached in `~/.cache/codegen-typecheck/` and reinstalled only when the dependency list changes, so the first run needs network.
 2. Runs every generator in a fresh copy, with every `--element` and every `--variants` / `--as-child` combination, plus `--with-test` and `--with-story`. That's about 200 calls and 480 files per Next stack.
-3. Runs `tsc --noEmit` in strict mode and reports each error under the generator call that wrote the file.
+3. Runs `tsc --noEmit` in strict mode, then ESLint on the generated files (typescript-eslint recommended, React hooks including the React Compiler rules, jsx-a11y, and the Next core-web-vitals rules on Next stacks). Each error is reported under the generator call that wrote the file. Lint warnings are listed but don't fail the run.
 
 Combinations the generator refuses (for example, `--as-child` with styled-components) are reported as skipped, not failed. No agent is involved, so it costs no tokens. The full run takes about four minutes once the dependencies are cached.
 

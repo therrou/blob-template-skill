@@ -16,7 +16,7 @@
   "react/hook": [
     {
       "path": "hooks/use-x-card.ts",
-      "content": "export type UseXCardResult = {\n  // TODO(codegen): describe what the hook returns\n};\n\nexport function useXCard(): UseXCardResult {\n  // TODO(codegen): implement; clean up every effect/subscription and keep returned callbacks stable\n  return {};\n}\n"
+      "content": "// TODO(codegen): describe what the hook returns\nexport type UseXCardResult = Record<string, never>;\n\nexport function useXCard(): UseXCardResult {\n  // TODO(codegen): implement; clean up every effect/subscription and keep returned callbacks stable\n  return {};\n}\n"
     },
     {
       "path": "hooks/use-x-card.test.ts",
@@ -26,7 +26,7 @@
   "react/context": [
     {
       "path": "contexts/x-card-context.tsx",
-      "content": "import { createContext, useContext, type ReactNode } from 'react';\n\nexport type XCardContextValue = {\n  // TODO(codegen): describe the shared state and actions\n};\n\nconst XCardContext = createContext<XCardContextValue | null>(null);\n\nexport function XCardProvider({ children }: { children: ReactNode }) {\n  // TODO(codegen): hold state here; wrap the value in useMemo when it contains objects or functions\n  const value: XCardContextValue = {};\n  return <XCardContext.Provider value={value}>{children}</XCardContext.Provider>;\n}\n\nexport function useXCard(): XCardContextValue {\n  const context = useContext(XCardContext);\n  if (!context) throw new Error('useXCard must be used within <XCardProvider>.');\n  return context;\n}\n"
+      "content": "import { createContext, useContext, type ReactNode } from 'react';\n\n// TODO(codegen): describe the shared state and actions\nexport type XCardContextValue = Record<string, never>;\n\nconst XCardContext = createContext<XCardContextValue | null>(null);\n\nexport function XCardProvider({ children }: { children: ReactNode }) {\n  // TODO(codegen): hold state here; wrap the value in useMemo when it contains objects or functions\n  const value: XCardContextValue = {};\n  return <XCardContext.Provider value={value}>{children}</XCardContext.Provider>;\n}\n\nexport function useXCard(): XCardContextValue {\n  const context = useContext(XCardContext);\n  if (!context) throw new Error('useXCard must be used within <XCardProvider>.');\n  return context;\n}\n"
     }
   ],
   "react/util": [
@@ -90,7 +90,7 @@
   "next/hook": [
     {
       "path": "hooks/use-x-card.ts",
-      "content": "// Hooks only run in Client Components: the calling component needs 'use client'.\nexport type UseXCardResult = {\n  // TODO(codegen): describe what the hook returns\n};\n\nexport function useXCard(): UseXCardResult {\n  // TODO(codegen): implement; clean up every effect/subscription and keep returned callbacks stable\n  return {};\n}\n"
+      "content": "// Hooks only run in Client Components: the calling component needs 'use client'.\n// TODO(codegen): describe what the hook returns\nexport type UseXCardResult = Record<string, never>;\n\nexport function useXCard(): UseXCardResult {\n  // TODO(codegen): implement; clean up every effect/subscription and keep returned callbacks stable\n  return {};\n}\n"
     },
     {
       "path": "hooks/use-x-card.test.ts",
@@ -100,7 +100,7 @@
   "next/context": [
     {
       "path": "contexts/x-card-context.tsx",
-      "content": "'use client';\n\nimport { createContext, useContext, type ReactNode } from 'react';\n\nexport type XCardContextValue = {\n  // TODO(codegen): describe the shared state and actions\n};\n\nconst XCardContext = createContext<XCardContextValue | null>(null);\n\nexport function XCardProvider({ children }: { children: ReactNode }) {\n  // TODO(codegen): hold state here; wrap the value in useMemo when it contains objects or functions\n  const value: XCardContextValue = {};\n  return <XCardContext.Provider value={value}>{children}</XCardContext.Provider>;\n}\n\nexport function useXCard(): XCardContextValue {\n  const context = useContext(XCardContext);\n  if (!context) throw new Error('useXCard must be used within <XCardProvider>.');\n  return context;\n}\n"
+      "content": "'use client';\n\nimport { createContext, useContext, type ReactNode } from 'react';\n\n// TODO(codegen): describe the shared state and actions\nexport type XCardContextValue = Record<string, never>;\n\nconst XCardContext = createContext<XCardContextValue | null>(null);\n\nexport function XCardProvider({ children }: { children: ReactNode }) {\n  // TODO(codegen): hold state here; wrap the value in useMemo when it contains objects or functions\n  const value: XCardContextValue = {};\n  return <XCardContext.Provider value={value}>{children}</XCardContext.Provider>;\n}\n\nexport function useXCard(): XCardContextValue {\n  const context = useContext(XCardContext);\n  if (!context) throw new Error('useXCard must be used within <XCardProvider>.');\n  return context;\n}\n"
     }
   ],
   "next/util": [
@@ -116,7 +116,7 @@
   "next/route": [
     {
       "path": "app/blog/[slug]/page.tsx",
-      "content": "type BlogSlugPageProps = {\n  params: Promise<{ slug: string }>;\n};\n\n// TODO(codegen): add generateMetadata({ params }) if the title depends on params\nexport default async function BlogSlugPage({ params }: BlogSlugPageProps) {\n  const { slug } = await params;\n  // TODO(codegen): fetch data here on the server and pass plain props down; keep client components at the leaves\n  return (\n    <main>\n      {/* TODO(codegen): page content */}\n    </main>\n  );\n}\n"
+      "content": "type BlogSlugPageProps = {\n  params: Promise<{ slug: string }>;\n};\n\n// TODO(codegen): add generateMetadata({ params }) if the title depends on params\nexport default async function BlogSlugPage({ params }: BlogSlugPageProps) {\n  const { slug } = await params;\n  void slug;\n  // TODO(codegen): fetch data here on the server and pass plain props down; keep client components at the leaves\n  return (\n    <main>\n      {/* TODO(codegen): page content */}\n    </main>\n  );\n}\n"
     },
     {
       "path": "app/blog/[slug]/layout.tsx",
@@ -134,7 +134,7 @@
   "next/api-route": [
     {
       "path": "app/api/blog/[slug]/route.ts",
-      "content": "import { NextResponse } from 'next/server';\n\ntype RouteContext = {\n  params: Promise<{ slug: string }>;\n};\n\nexport async function GET(request: Request, { params }: RouteContext) {\n  const { slug } = await params;\n  // TODO(codegen): authenticate/authorize, validate input (search params, body), handle errors with proper status codes\n  return NextResponse.json({ ok: true });\n}\n"
+      "content": "import { NextResponse } from 'next/server';\n\ntype RouteContext = {\n  params: Promise<{ slug: string }>;\n};\n\nexport async function GET(request: Request, { params }: RouteContext) {\n  const { slug } = await params;\n  void request; void slug;\n  // TODO(codegen): authenticate/authorize, validate input (search params, body), handle errors with proper status codes\n  return NextResponse.json({ ok: true });\n}\n"
     },
     {
       "path": "app/api/blog/[slug]/route.test.ts",

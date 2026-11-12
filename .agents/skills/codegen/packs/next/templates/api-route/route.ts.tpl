@@ -10,6 +10,7 @@ export async function GET(request: Request{{#if hasParams}}, { params }: RouteCo
 {{#if hasParams}}
   const { {{paramsList}} } = {{#if asyncParams}}await params{{else}}params{{/if}};
 {{/if}}
+  void request;{{#if hasParams}} {{paramsVoid}}{{/if}}
   // TODO(codegen): authenticate/authorize, validate input (search params, body), handle errors with proper status codes
   return NextResponse.json({ ok: true });
 }

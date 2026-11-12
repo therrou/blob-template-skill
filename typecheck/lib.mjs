@@ -47,6 +47,20 @@ export function parseTscErrors(output) {
   return errors;
 }
 
+// `eslint --format json` output, as the same { file, line, code, message } shape plus severity (2 error, 1 warning).
+export function parseEslint(json, root) {
+  if (!json.trim()) return [];
+  return JSON.parse(json).flatMap((result) =>
+    result.messages.map((m) => ({
+      file: result.filePath.startsWith(root) ? result.filePath.slice(root.length + 1).split('\\').join('/') : result.filePath,
+      line: m.line ?? 0,
+      code: m.ruleId ?? 'eslint',
+      message: m.message,
+      severity: m.severity,
+    })),
+  );
+}
+
 // Pins each error on the generator call that created (or last edited) its file; anything else is the sample app's own code.
 export function attribute(errors, filesByCall) {
   const owner = new Map();

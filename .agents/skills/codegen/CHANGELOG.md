@@ -3,6 +3,12 @@
 Update a repo's copy by replacing `.agents/skills/codegen/` with the boilerplate version.
 Repo overrides live in `.codegen/templates/` and are never touched by an update.
 
+## 0.4.1 — 2026-11-12
+
+Generated files now pass ESLint as generated (typescript-eslint recommended, React hooks, jsx-a11y, Next core-web-vitals), checked on every supported stack by `npm run typecheck`:
+- `hook`, `context` and Pages Router `route`: placeholder types are `Record<string, never>` instead of an empty `{}` (`no-empty-object-type`).
+- App Router `route` and `api-route`: route params and `request` are marked with `void` until the TODO uses them (`no-unused-vars`), as `server-action` already did.
+
 ## 0.4.0 — 2026-10-27
 
 **Breaking:**

@@ -43,6 +43,8 @@ export function parseRoute(raw) {
     hasParams: params.length > 0,
     paramsType: `{ ${params.map((p) => `${p.name}${p.optional ? '?' : ''}: ${p.type}`).join('; ')} }`,
     paramsList: params.map((p) => p.name).join(', '),
+    // Marks each param as used until the TODO uses it (no-unused-vars); same convention as the server action.
+    paramsVoid: params.map((p) => `void ${p.name};`).join(' '),
     paramsSample: `{ ${params.map(sample).join(', ')} }`,
     urlPath: urlParts.join('/'),
   };
