@@ -3,6 +3,13 @@
 Update a repo's copy by replacing `.agents/skills/codegen/` with the boilerplate version.
 Repo overrides live in `.codegen/templates/` and are never touched by an update.
 
+## 0.4.2 — 2026-11-12
+
+Fixes from the first pilot in two real repos:
+- Installing the skill no longer breaks a repo's `eslint .`: the skill's own scripts pass `no-empty` and `no-control-regex`.
+- `cn` is detected when UI components live one folder deep (`ui/button/button.tsx`) and when it's imported with other names (`{ cn, focusRing }`).
+- `check-tokens` no longer reports Tailwind variant selectors with brackets (`data-[state=open]:`, `group-data-[…]:`, `has-[…]:`) as arbitrary values.
+
 ## 0.4.1 — 2026-11-12
 
 Generated files now pass ESLint as generated (typescript-eslint recommended, React hooks, jsx-a11y, Next core-web-vitals), checked on every supported stack by `npm run typecheck`:

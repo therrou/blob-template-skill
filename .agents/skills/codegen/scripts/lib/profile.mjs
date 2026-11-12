@@ -65,14 +65,20 @@ function detectPrimitives(root) {
   return { value: 'radix', source: 'detected' };
 }
 
-const CN_IMPORT = /import\s*\{\s*cn\s*\}\s*from\s*['"]([^'"]+)['"]/;
+const CN_IMPORT = /import\s*\{[^}]*\bcn\b[^}]*\}\s*from\s*['"]([^'"]+)['"]/;
 
 // The project's own ui components show how cn is imported today (shadcn moved it to the `cn` package in 2026).
 function detectCnImport(root) {
   const uiDir = path.join(root, resolveAliasDir(root, detectShadcnAliases(root).ui ?? '@/components/ui'));
   if (fs.existsSync(uiDir)) {
-    for (const file of fs.readdirSync(uiDir).filter((f) => /\.[jt]sx?$/.test(f)).sort()) {
-      const m = CN_IMPORT.exec(fs.readFileSync(path.join(uiDir, file), 'utf8'));
+    // Flat (ui/button.tsx, shadcn) first, then one folder deep (ui/button/button.tsx).
+    const entries = fs.readdirSync(uiDir, { withFileTypes: true }).sort((a, b) => a.name.localeCompare(b.name));
+    const files = [
+      ...entries.filter((e) => e.isFile()).map((e) => path.join(uiDir, e.name)),
+      ...entries.filter((e) => e.isDirectory()).flatMap((e) => fs.readdirSync(path.join(uiDir, e.name)).sort().map((f) => path.join(uiDir, e.name, f))),
+    ].filter((f) => /\.[jt]sx?$/.test(f) && fs.statSync(f).isFile());
+    for (const file of files) {
+      const m = CN_IMPORT.exec(fs.readFileSync(file, 'utf8'));
       if (m) return m[1];
     }
   }

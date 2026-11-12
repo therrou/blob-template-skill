@@ -40,6 +40,11 @@ test('cn comes from existing ui components first', () => {
   assert.equal(detectProfile(root).dims.cn.value, 'cn');
 });
 
+test('cn is found in ui components kept one folder deep (ui/button/button.tsx), no components.json', () => {
+  const root = makeRepo({ dirs: ['src'], files: { 'src/components/ui/button/button.tsx': 'import { cn, focusRing } from "@/styles/utils";\n' } });
+  assert.equal(detectProfile(root).dims.cn.value, '@/styles/utils');
+});
+
 test('installed versions win, hoisted installs are found, odd ranges are unknown', () => {
   const mono = makeRepo({ files: { 'node_modules/react/package.json': '{"version":"18.3.1"}', 'apps/web/package.json': '{"dependencies":{"react":"catalog:"}}' } });
   assert.equal(detectProfile(path.join(mono, 'apps/web')).dims.react.value, '18');

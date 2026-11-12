@@ -15,7 +15,8 @@ const LEFTOVER_BLOCK = /\{\{(?:#(?:if|unless) |\/(?:if|unless)\}|else\}\})/;
 const PARTIAL = /\{\{>\s*(@?[\w./-]+)\s*\}\}/g;
 // `{{helper path}}` or `{{path}}`, in one pass so substituted values are never scanned again.
 const EXPRESSION = /\{\{\s*(?:([A-Za-z]\w*)\s+)?([\w.]+)\s*\}\}/g;
-const PLACEHOLDER = /\u0000P(\d+)\u0000/g;
+// Private-use characters never appear in templates (and aren't control characters, so repo lint rules stay quiet).
+const PLACEHOLDER = /\uE000P(\d+)\uE000/g;
 
 const casing = (key) => (value) => nameCases(toWords(value))[key] ?? '';
 export const BUILT_IN_HELPERS = {
@@ -43,7 +44,7 @@ function scalar(ctx, key, source) {
 export function render(template, ctx, source = 'template', env = {}, stack = []) {
   // Partials become placeholders and are rendered last, so a partial in a false branch is never loaded.
   const partials = [];
-  let out = template.replace(PARTIAL, (_, ref) => `\u0000P${partials.push(ref) - 1}\u0000`);
+  let out = template.replace(PARTIAL, (_, ref) => `\uE000P${partials.push(ref) - 1}\uE000`);
   out = out.replace(BLOCK_LINE, '$1');
   let match;
   while ((match = INNERMOST_BLOCK.exec(out))) {

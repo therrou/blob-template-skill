@@ -15,7 +15,8 @@ const RULES = [
   {
     rule: 'arbitrary-value',
     message: 'Arbitrary value: use a theme token (spacing, color, radius, font size). If none fits, add a tokens-allow comment with the reason.',
-    regex: new RegExp(`(?<![\\w-])${VARIANTS}!?-?[a-z][a-z0-9-]*-\\[[^\\]\\s]+\\]`, 'g'),
+    // (?!:) because `data-[state=open]:`, `has-[…]:` and `group-data-[…]:` are variant selectors, not values.
+    regex: new RegExp(`(?<![\\w-])${VARIANTS}!?-?[a-z][a-z0-9-]*-\\[[^\\]\\s]+\\](?!:)`, 'g'),
     // var(--token) and the v4 (--token) shorthand reference tokens, so they are fine.
     allow: (m) => /-\[(?:[a-z-]+:)?var\(--/.test(m),
   },

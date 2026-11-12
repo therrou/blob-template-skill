@@ -359,7 +359,9 @@ export function write(files) {
     for (const dir of [...new Set(createdDirs)].sort((a, b) => b.length - a.length)) {
       try {
         fs.rmdirSync(dir);
-      } catch {}
+      } catch {
+        // not empty or already gone: leave it
+      }
     }
     throw err;
   }

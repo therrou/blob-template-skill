@@ -82,6 +82,15 @@ test('allows token-backed arbitrary values and tokens-allow suppressions with a 
   assert.deepEqual(rules(json), ['arbitrary-value:h-[1px]']);
 });
 
+test('variant selectors with brackets are not values; a value behind one still is', () => {
+  const root = repo({
+    'app/globals.css': V4_THEME,
+    'e.tsx': `<div className="data-[state=open]:bg-primary group-data-[side=left]:hidden has-[>svg]:gap-2 aria-[expanded=true]:p-[13px]" />`,
+  });
+  const { json } = check(root, 'e.tsx');
+  assert.deepEqual(rules(json), ['arbitrary-value:aria-[expanded=true]:p-[13px]']);
+});
+
 test('without semantic theme colors, palette colors are allowed but reported as a warning', () => {
   const root = repo({ 'd.tsx': `<p className="text-blue-500" />` });
   const { status, json } = check(root, 'd.tsx');
