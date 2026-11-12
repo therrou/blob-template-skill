@@ -139,7 +139,7 @@ Recommended existing ESLint rules that match the conventions:
 
 `npm run eval` checks the main assumption: an agent with this skill runs the generator instead of hand-writing files, keeps what it generated, and stops when it should. Each run copies one sample app from `evals/fixtures/` to a temp folder, runs `claude -p` with the case prompt, and checks the result. It costs tokens and isn't deterministic, so it runs by hand, several times per case, not in CI.
 
-Sample apps: `next-app-tw4` (Next 16, Tailwind 4, shadcn/Radix), `next-pages-tw3` (Next 14 Pages Router, React 18, Tailwind 3), `vite-react18-styled` (Vite SPA, styled-components, `src/`, a barrel), `next-base-ui` (shadcn on Base UI), `react17-legacy` (outside the support matrix).
+Sample apps: `next-app-tw4` (Next 16, Tailwind 4, shadcn/Radix), `next-pages-tw3` (Next 14 Pages Router, React 18, Tailwind 3), `vite-react18-styled` (Vite SPA, styled-components, `src/`, a barrel), `next-base-ui` (shadcn on Base UI), `vite-react19-emotion` (Emotion with a typed theme; only the type check uses it so far), `react17-legacy` (outside the support matrix).
 
 Each case in `evals/cases.json` picks a `fixture` and a `prompt`, then any of these checks:
 
@@ -166,13 +166,13 @@ Each run writes `evals/results/<date>-v<version>-<model>/`: `summary.json` (pass
 
 ## Generated-code type check
 
-`npm run typecheck` checks that what the generator writes compiles against the real packages. For each supported sample app in `evals/fixtures/`, it:
+`npm run typecheck` checks that what the generator writes compiles against the real packages. It covers nine stacks: the supported sample apps in `evals/fixtures/`, an MUI variant of the Emotion app, and pinned copies for the oldest supported versions (Next 13.0 Pages Router with Tailwind 3.0, Next 13.4 App Router, both on React 18.2) and for Next 15. For each one it:
 
 1. Installs the app's dependencies, plus types, vitest, Testing Library and Storybook. They are cached in `~/.cache/codegen-typecheck/` and reinstalled only when the dependency list changes, so the first run needs network.
-2. Runs every generator in a fresh copy, with every `--element` and every `--variants` / `--as-child` combination, plus `--with-test` and `--with-story`. That's about 200 calls and 480 files per app.
+2. Runs every generator in a fresh copy, with every `--element` and every `--variants` / `--as-child` combination, plus `--with-test` and `--with-story`. That's about 200 calls and 480 files per Next stack.
 3. Runs `tsc --noEmit` in strict mode and reports each error under the generator call that wrote the file.
 
-Combinations the generator refuses (for example, `--as-child` with styled-components) are reported as skipped, not failed. No agent is involved, so it costs no tokens. The full run takes about two minutes once the dependencies are cached.
+Combinations the generator refuses (for example, `--as-child` with styled-components) are reported as skipped, not failed. No agent is involved, so it costs no tokens. The full run takes about four minutes once the dependencies are cached.
 
 ```bash
 npm run typecheck

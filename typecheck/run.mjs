@@ -58,13 +58,23 @@ export function Textarea(props: ComponentProps<'textarea'>) {
 };
 const RADIX_DEPS = { '@radix-ui/react-select': '^2.1.0', '@radix-ui/react-checkbox': '^1.1.0' };
 
-// The supported sample apps. react17-legacy is outside the matrix and has nothing to check.
+// The supported sample apps, plus pinned variants for the oldest supported versions. `pin` replaces the app's own
+// dependency ranges with exact versions; the generator then detects those installed versions.
+// react17-legacy is outside the matrix and has nothing to check.
+const NEXT_RADIX = { ...RADIX_DEPS, 'server-only': '^0.0.1' };
+const REACT_18_2 = { react: '18.2.0', 'react-dom': '18.2.0' };
 const STACKS = [
-  { fixture: 'next-app-tw4', pack: 'next', deps: { ...reactTypes(19), ...RADIX_DEPS, 'server-only': '^0.0.1' }, files: RADIX_PRIMITIVES },
-  { fixture: 'next-pages-tw3', pack: 'next', deps: { ...reactTypes(18), ...RADIX_DEPS, 'server-only': '^0.0.1' }, files: RADIX_PRIMITIVES },
+  { fixture: 'next-app-tw4', pack: 'next', deps: { ...reactTypes(19), ...NEXT_RADIX }, files: RADIX_PRIMITIVES },
+  { fixture: 'next-pages-tw3', pack: 'next', deps: { ...reactTypes(18), ...NEXT_RADIX }, files: RADIX_PRIMITIVES },
   { fixture: 'next-base-ui', pack: 'next', deps: { ...reactTypes(19), 'server-only': '^0.0.1' }, files: {} },
   { fixture: 'vite-react18-styled', pack: 'react', deps: reactTypes(18), files: {} },
-];
+  { fixture: 'vite-react19-emotion', pack: 'react', deps: reactTypes(19), files: {} },
+  { name: 'vite-react19-mui', fixture: 'vite-react19-emotion', pack: 'react', deps: reactTypes(19), pin: { '@mui/material': '^9.0.0' }, files: {} },
+  // Oldest supported: App Router went stable in Next 13.4; React 18.2 is the oldest React 18 still common.
+  { name: 'next13.4-app-react18.2', fixture: 'next-app-tw4', pack: 'next', deps: { '@types/react': '18.2.79', '@types/react-dom': '18.2.25', ...NEXT_RADIX }, pin: { next: '13.4.19', ...REACT_18_2 }, files: RADIX_PRIMITIVES },
+  { name: 'next13.0-pages-tw3.0', fixture: 'next-pages-tw3', pack: 'next', deps: { '@types/react': '18.2.79', '@types/react-dom': '18.2.25', ...NEXT_RADIX, tailwindcss: '3.0.24' }, pin: { next: '13.0.7', ...REACT_18_2 }, files: RADIX_PRIMITIVES },
+  { name: 'next15-app', fixture: 'next-app-tw4', pack: 'next', deps: { ...reactTypes(19), ...NEXT_RADIX }, pin: { next: '~15.5.0' }, files: RADIX_PRIMITIVES },
+].map((s) => ({ name: s.fixture, ...s }));
 
 const COMMON_FILES = {
   '.storybook/main.ts': "export default { stories: ['../**/*.stories.tsx'], framework: '@storybook/react-vite' };\n",
@@ -76,24 +86,25 @@ const run = (cmd, argv, cwd) => spawnSync(cmd, argv, { cwd, encoding: 'utf8', ma
 function packageJson(stack) {
   const pkg = JSON.parse(fs.readFileSync(path.join(fixturesDir, stack.fixture, 'package.json'), 'utf8'));
   pkg.devDependencies = { ...pkg.devDependencies, ...TOOLING, ...stack.deps };
+  pkg.dependencies = { ...pkg.dependencies, ...stack.pin };
   return pkg;
 }
 
 // node_modules per stack, keyed by the merged package.json so a dependency change reinstalls.
 function installed(stack, pkg) {
   const text = JSON.stringify(pkg, null, 2);
-  const dir = path.join(cacheRoot, `${stack.fixture}-${crypto.createHash('sha256').update(text).digest('hex').slice(0, 12)}`);
+  const dir = path.join(cacheRoot, `${stack.name}-${crypto.createHash('sha256').update(text).digest('hex').slice(0, 12)}`);
   if (fs.existsSync(path.join(dir, 'node_modules', '.package-lock.json'))) return dir;
   fs.mkdirSync(dir, { recursive: true });
   fs.writeFileSync(path.join(dir, 'package.json'), text);
   console.log(`  installing dependencies into ${dir} ...`);
   const r = run('npm', ['install', '--no-audit', '--no-fund', '--ignore-scripts', '--legacy-peer-deps', '--loglevel=error'], dir);
-  if (r.status !== 0) throw new Error(`npm install failed for ${stack.fixture}:\n${r.stderr}`);
+  if (r.status !== 0) throw new Error(`npm install failed for ${stack.name}:\n${r.stderr}`);
   return dir;
 }
 
 function workspace(stack, pkg, cacheDir) {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), `codegen-typecheck-${stack.fixture}-`));
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), `codegen-typecheck-${stack.name}-`));
   fs.cpSync(path.join(fixturesDir, stack.fixture), dir, { recursive: true });
   fs.writeFileSync(path.join(dir, 'package.json'), JSON.stringify(pkg, null, 2));
   for (const [file, content] of Object.entries({ ...COMMON_FILES, ...stack.files })) {
@@ -127,7 +138,7 @@ function workspace(stack, pkg, cacheDir) {
 }
 
 function checkStack(stack) {
-  console.log(`\n== ${stack.fixture} (${stack.pack} pack)`);
+  console.log(`\n== ${stack.name} (${stack.pack} pack)`);
   const pkg = packageJson(stack);
   const dir = workspace(stack, pkg, installed(stack, pkg));
 
@@ -167,9 +178,9 @@ function checkStack(stack) {
   return pass;
 }
 
-const stacks = STACKS.filter((s) => !only || s.fixture === only);
+const stacks = STACKS.filter((s) => !only || s.name === only);
 if (!stacks.length) {
-  console.error(`No stack "${only}". Stacks: ${STACKS.map((s) => s.fixture).join(', ')}`);
+  console.error(`No stack "${only}". Stacks: ${STACKS.map((s) => s.name).join(', ')}`);
   process.exit(1);
 }
 const results = stacks.map(checkStack);
