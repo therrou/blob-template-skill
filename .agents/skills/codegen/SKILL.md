@@ -39,6 +39,7 @@ Paths below are relative to the repo root: `SKILL=.agents/skills/codegen`.
    - `node $SKILL/scripts/generate.mjs --format <files>` formats them with the repo's Prettier (`format: null` means the repo has none).
    - `node $SKILL/scripts/check-tokens.mjs <files>` must exit 0. Fix every violation.
    - Then run the repo's own lint and typecheck, plus the tests if you generated any. Fix lint errors in your code; don't disable the rule.
+   - Run each check as its own command. Don't chain them with `;` or `&&`: if one part of a chain needs approval and is denied, none of it runs.
 
 ## Styling in one line
 

@@ -3,6 +3,13 @@
 Update a repo's copy by replacing `.agents/skills/codegen/` with the boilerplate version.
 Repo overrides live in `.codegen/templates/` and are never touched by an update.
 
+## 0.6.1 — 2026-11-12
+
+From pilot round 4 and the 0.6.0 evals, where agents chained `--format` with `npx eslint` and a denied `npx` stopped the format too:
+- SKILL.md's verify step asks for each check as its own command.
+- Evals: `badge-variants` also accepts `components/ui/badge/`, where the fixture keeps its primitives.
+- `npm run typecheck` asserts that the `"exports": "const"` stacks generate const components with an export list.
+
 ## 0.6.0 — 2026-11-12
 
 From the pilot gaps G3–G5:

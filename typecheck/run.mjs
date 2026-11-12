@@ -184,6 +184,15 @@ function checkStack(stack) {
   const tsc = run(process.execPath, [path.join(dir, 'node_modules/typescript/bin/tsc'), '-p', 'tsconfig.typecheck.json', '--pretty', 'false'], dir);
   const typeErrors = attribute(parseTscErrors(tsc.stdout), filesByCall);
   const generated = [...new Set(filesByCall.flatMap((c) => c.files))].filter((f) => /\.tsx?$/.test(f));
+  // "exports": "const" stacks: every component file must be `const X = …` + `export { X }`, never `export function`.
+  if (stack.files?.['.codegen/config.json']?.includes('"const"')) {
+    const componentFiles = filesByCall.filter((c) => c.call.split(' ')[1] === 'component').flatMap((c) => c.files.filter((f) => /\.tsx$/.test(f) && !/\.(test|stories)\.tsx$/.test(f)));
+    if (!componentFiles.length) genErrors.push('exports const: no component files generated');
+    for (const f of componentFiles) {
+      const src = fs.readFileSync(path.join(dir, f), 'utf8');
+      if (/^export (default )?function /m.test(src) || !/^export \{/m.test(src)) genErrors.push(`exports const: ${f} is not a const component with an export list`);
+    }
+  }
   const eslint = run(process.execPath, [path.join(dir, 'node_modules/eslint/bin/eslint.js'), '--format', 'json', ...generated], dir);
   const lint = attribute(parseEslint(eslint.stdout, fs.realpathSync(dir)), filesByCall);
   const lintErrors = lint.filter((e) => e.severity === 2);

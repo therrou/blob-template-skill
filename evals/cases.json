@@ -4,7 +4,7 @@
     "prompt": "Create a Badge component with success, warning and neutral variants in sm and md sizes.",
     "generator": "component|client-component",
     "newFiles": [
-      "^components/[a-z-]*badge[a-z-]*/[a-z-]*badge[a-z-]*\\.tsx$"
+      "^components/(ui/)?[a-z-]*badge[a-z-]*/[a-z-]*badge[a-z-]*\\.tsx$"
     ],
     "contains": [
       {
