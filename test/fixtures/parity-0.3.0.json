@@ -16,7 +16,7 @@
   "react/hook": [
     {
       "path": "hooks/use-x-card.ts",
-      "content": "// TODO(codegen): describe what the hook returns\nexport type UseXCardResult = Record<string, never>;\n\nexport function useXCard(): UseXCardResult {\n  // TODO(codegen): implement; clean up every effect/subscription and keep returned callbacks stable\n  return {};\n}\n"
+      "content": "// TODO(codegen): describe what the hook returns\nexport type UseXCardResult = Record<string, never>;\n\nexport function useXCard(): UseXCardResult {\n  // TODO(codegen): implement; clean up every effect/subscription and keep returned callbacks stable. Don't call setState in an effect body (react-hooks/set-state-in-effect): derive the value while rendering, subscribe with useSyncExternalStore, or set state in the subscription's callback\n  return {};\n}\n"
     },
     {
       "path": "hooks/use-x-card.test.ts",
@@ -90,7 +90,7 @@
   "next/hook": [
     {
       "path": "hooks/use-x-card.ts",
-      "content": "// Hooks only run in Client Components: the calling component needs 'use client'.\n// TODO(codegen): describe what the hook returns\nexport type UseXCardResult = Record<string, never>;\n\nexport function useXCard(): UseXCardResult {\n  // TODO(codegen): implement; clean up every effect/subscription and keep returned callbacks stable\n  return {};\n}\n"
+      "content": "// Hooks only run in Client Components: the calling component needs 'use client'.\n// TODO(codegen): describe what the hook returns\nexport type UseXCardResult = Record<string, never>;\n\nexport function useXCard(): UseXCardResult {\n  // TODO(codegen): implement; clean up every effect/subscription and keep returned callbacks stable. Don't call setState in an effect body (react-hooks/set-state-in-effect): derive the value while rendering, subscribe with useSyncExternalStore, or set state in the subscription's callback\n  return {};\n}\n"
     },
     {
       "path": "hooks/use-x-card.test.ts",

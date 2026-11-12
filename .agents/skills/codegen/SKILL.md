@@ -14,6 +14,7 @@ Paths below are relative to the repo root: `SKILL=.agents/skills/codegen`.
 1. **Detect the stack, then pick the pack.** Run `node $SKILL/scripts/generate.mjs --detect` and read `profile`: app type, Next and React versions, styling (Tailwind 3/4, styled-components, Emotion/MUI, plain), shadcn primitives (Radix/Base UI), `cn` import, Zod and TanStack Table versions.
    - Use `next` when `profile.app` is `next-app` or `next-pages`, otherwise `react`. For any other stack there is no pack yet: write the code by hand following the closest `CONVENTIONS.md`.
    - If a value is wrong (e.g. a migration in progress), set it in `.codegen/config.json` (`{ "profile": { "styling": "emotion" } }`) and tell the user, or pass `--profile key=value` for one run.
+   - Repo conventions also live in `.codegen/config.json`: `"out": { "util": "src/utils" }` sets a generator's folder, and `"exports": "const"` writes components as `const X = …` with `export { X }` and a local props type. If existing components or folders clearly follow another convention, propose the setting to the user.
 2. **Reuse check** (components only). Search `components/ui/`, the existing component folders, and any design-system package in `package.json` for something that already does the job. If you find one, reuse or extend it, tell the user, and stop. New components compose existing primitives; they don't re-style raw HTML.
 3. **Read the conventions**: `$SKILL/packs/<pack>/CONVENTIONS.md`. For next, also read the react one.
 4. **Choose the generator and options**: `node $SKILL/scripts/generate.mjs --list <pack>`.
@@ -54,4 +55,4 @@ To change a template for one repo, copy it from `$SKILL/packs/<pack>/templates/<
 - You are about to add `'use client'` to a page, a layout, or a large component. Extract a small client leaf instead.
 - You are about to pick `--element div` for something users click, or a list, heading or landmark.
 - You are about to install a package or shadcn primitive without asking the user.
-- You are using `--out` to break the folder conventions without the user asking for it.
+- You are using `--out` to break the repo's folder conventions. Use it to follow them (e.g. `components/ui` vs `components/modules`), or set `out` in `.codegen/config.json`.

@@ -3,6 +3,14 @@
 Update a repo's copy by replacing `.agents/skills/codegen/` with the boilerplate version.
 Repo overrides live in `.codegen/templates/` and are never touched by an update.
 
+## 0.6.0 — 2026-11-12
+
+From the pilot gaps G3–G5:
+- `.codegen/config.json` → `"out": { "<generator>": "<folder>" }` sets output folders per repo (relative to the root; `--out` still wins). Unknown generator names are errors.
+- `.codegen/config.json` → `"exports": "const"` writes components as `const X = …` with `export { X }` and a local props type, the style both pilot teams use. Works with every element, `--variants`, `--as-child`, React 18 `forwardRef` and CSS-in-JS. Default output is unchanged.
+- The hook TODO points at `react-hooks/set-state-in-effect` and its alternatives.
+- `npm run typecheck` covers three `"exports": "const"` stacks (12 in all).
+
 ## 0.5.1 — 2026-11-12
 
 From the second pilot round, where the agent rewrote hook skeletons after the generator had formatted them:

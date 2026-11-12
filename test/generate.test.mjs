@@ -381,6 +381,46 @@ test('--format formats any files with the repo Prettier; without one it is a no-
   assert.equal(run(root, '--format').status, 1);
 });
 
+test('.codegen/config.json "out" sets a generator folder as written; --out still wins', () => {
+  const config = JSON.stringify({ out: { util: 'src/utils', component: 'src/components/modules' } });
+  const root = makeRepo({ dirs: ['src'], files: { '.codegen/config.json': config } });
+  assert.deepEqual(run(root, 'next', 'util', '--name', 'slugify').json.created, ['src/utils/slugify.ts']);
+  assert.deepEqual(run(root, 'next', 'component', '--name', 'Stats', '--element', 'ul').json.created, ['src/components/modules/stats/stats.tsx']);
+  assert.deepEqual(run(root, 'next', 'component', '--name', 'Pill', '--element', 'span', '--out', 'src/components/ui').json.created, ['src/components/ui/pill/pill.tsx']);
+  assert.deepEqual(run(root, 'next', 'hook', '--name', 'useX').json.created, ['src/hooks/use-x.ts']);
+});
+
+test('.codegen/config.json is validated: unknown generators in "out", bad "exports"', () => {
+  const bad = (config) => run(makeRepo({ files: { '.codegen/config.json': JSON.stringify(config) } }), 'next', 'util', '--name', 'a').json.error;
+  assert.match(bad({ out: { utils: 'src/utils' } }), /Unknown generator utils in "out"/);
+  assert.match(bad({ out: { util: '' } }), /must map generator names to folders/);
+  assert.match(bad({ exports: 'default' }), /"exports" .* must be one of: function, const/);
+});
+
+test('"exports": "const" writes const components with a local props type and one export list', () => {
+  const deps = { 'class-variance-authority': '^0.7', '@radix-ui/react-slot': '^1' };
+  const files = { '.codegen/config.json': JSON.stringify({ exports: 'const' }), 'lib/utils.ts': 'export function cn() {}' };
+  const root = makeRepo({ deps, files });
+  run(root, 'next', 'component', '--name', 'Badge', '--element', 'span', '--variants', '--as-child', '--with-barrel');
+  const src = read(root, 'components/badge/badge.tsx');
+  assert.match(src, /^const badgeVariants = cva\(/m);
+  assert.match(src, /^type BadgeProps = /m);
+  assert.match(src, /^const Badge = \(\{ .* \}: BadgeProps\) => \{$/m);
+  assert.match(src, /^\};\n\nexport \{ Badge, badgeVariants \};\n$/m);
+  assert.doesNotMatch(src, /export (function|const|type)/);
+  assert.equal(read(root, 'components/badge/index.ts'), "export { Badge, badgeVariants } from './badge';\n");
+
+  const r18 = makeRepo({ deps: { react: '^18.3' }, files: { '.codegen/config.json': JSON.stringify({ exports: 'const' }) } });
+  run(r18, 'react', 'component', '--name', 'Card', '--element', 'article');
+  assert.match(read(r18, 'components/card/card.tsx'), /^const Card = forwardRef<HTMLElement, CardProps>\(function Card[\s\S]*Card\.displayName = 'Card';\n\nexport \{ Card \};\n$/m);
+
+  const styled = makeRepo({ deps: { 'styled-components': '^6' }, files: { '.codegen/config.json': JSON.stringify({ exports: 'const' }) } });
+  run(styled, 'react', 'component', '--name', 'Tile', '--element', 'section');
+  const tile = read(styled, 'components/tile/tile.tsx');
+  assert.match(tile, /^const Tile = \(/m);
+  assert.match(tile, /\nexport \{ Tile \};\n$/);
+});
+
 test('Prettier 2 bin layout and a failing formatter: files stay written, the error is reported', () => {
   const root = makeRepo({ files: { ...fakePrettier('./bin-prettier.js'), 'node_modules/prettier/package.json': JSON.stringify({ bin: { prettier: './bin-prettier.js' } }) } });
   assert.equal(run(root, 'react', 'util', '--name', 'a').json.format.ok, true);

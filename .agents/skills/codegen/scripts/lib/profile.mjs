@@ -121,9 +121,11 @@ export function detectProfile(root) {
 }
 
 const CONFIG_FILE = path.join('.codegen', 'config.json');
-const CONFIG_KEYS = ['profile'];
+const CONFIG_KEYS = ['profile', 'out', 'exports'];
+const EXPORT_STYLES = ['function', 'const'];
 
-function readConfig(root) {
+// { profile: { dim: value }, out: { generator: folder }, exports: 'function' | 'const' }
+export function readConfig(root) {
   const file = path.join(root, CONFIG_FILE);
   if (!fs.existsSync(file)) return {};
   let config;
@@ -134,6 +136,13 @@ function readConfig(root) {
   }
   for (const key of Object.keys(config ?? {})) {
     if (!CONFIG_KEYS.includes(key)) throw new CodegenError(`Unknown key "${key}" in .codegen/config.json. Allowed: ${CONFIG_KEYS.join(', ')}.`);
+  }
+  const { out, exports } = config ?? {};
+  if (out !== undefined && (typeof out !== 'object' || out === null || Array.isArray(out) || !Object.values(out).every((v) => typeof v === 'string' && v))) {
+    throw new CodegenError('"out" in .codegen/config.json must map generator names to folders, e.g. { "util": "src/utils" }.');
+  }
+  if (exports !== undefined && !EXPORT_STYLES.includes(exports)) {
+    throw new CodegenError(`"exports" in .codegen/config.json must be one of: ${EXPORT_STYLES.join(', ')}. Got "${exports}".`);
   }
   return config ?? {};
 }

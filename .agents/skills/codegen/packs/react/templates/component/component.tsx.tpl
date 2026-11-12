@@ -24,7 +24,7 @@ import { cn } from '{{cn}}';
 // move only that part into a small client component instead of adding 'use client' here.
 {{/if}}
 {{#if variants}}
-export const {{name.camel}}Variants = cva('', {
+{{#unless constExport}}export {{/unless}}const {{name.camel}}Variants = cva('', {
   variants: {
     variant: {
       // TODO(codegen): one entry per visual variant, semantic token classes only (e.g. bg-primary text-primary-foreground)
@@ -39,7 +39,7 @@ export const {{name.camel}}Variants = cva('', {
 });
 
 {{/if}}
-export type {{name.pascal}}Props = {{el.propsType}} & {
+{{#unless constExport}}export {{/unless}}type {{name.pascal}}Props = {{el.propsType}} & {
   // TODO(codegen): add component-specific props (or drop this intersection)
 };
 
@@ -47,9 +47,13 @@ export type {{name.pascal}}Props = {{el.propsType}} & {
 // TODO(codegen): a11y: {{el.a11yNote}}
 {{/if}}
 {{#if profileIs.react.18}}
-export const {{name.pascal}} = forwardRef<{{el.refType}}, {{name.pascal}}Props>(function {{name.pascal}}({ {{el.params}} }, ref) {
+{{#unless constExport}}export {{/unless}}const {{name.pascal}} = forwardRef<{{el.refType}}, {{name.pascal}}Props>(function {{name.pascal}}({ {{el.params}} }, ref) {
+{{else}}
+{{#if constExport}}
+const {{name.pascal}} = ({ {{el.params}} }: {{name.pascal}}Props) => {
 {{else}}
 export function {{name.pascal}}({ {{el.params}} }: {{name.pascal}}Props) {
+{{/if}}
 {{/if}}
 {{#if el.baseUi}}
   // TODO(codegen): implement markup in children; compose existing UI primitives and use design tokens only
@@ -77,5 +81,13 @@ export function {{name.pascal}}({ {{el.params}} }: {{name.pascal}}Props) {
 });
 {{name.pascal}}.displayName = '{{name.pascal}}';
 {{else}}
+{{#if constExport}}
+};
+{{else}}
 }
+{{/if}}
+{{/if}}
+{{#if constExport}}
+
+export { {{name.pascal}}{{#if variants}}, {{name.camel}}Variants{{/if}} };
 {{/if}}

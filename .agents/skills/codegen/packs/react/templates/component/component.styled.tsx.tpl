@@ -28,7 +28,7 @@ const Root = {{el.styledOpen}}`
 {{/if}}
 `;
 
-export type {{name.pascal}}Props = {{el.baseProps}}{{#if variants}} & { variant?: {{name.pascal}}Variant; size?: {{name.pascal}}Size }{{/if}} & {
+{{#unless constExport}}export {{/unless}}type {{name.pascal}}Props = {{el.baseProps}}{{#if variants}} & { variant?: {{name.pascal}}Variant; size?: {{name.pascal}}Size }{{/if}} & {
   // TODO(codegen): add component-specific props (or drop this intersection)
 };
 
@@ -37,9 +37,13 @@ export type {{name.pascal}}Props = {{el.baseProps}}{{#if variants}} & { variant?
 {{/if}}
 // TODO(codegen): to render a different element or component, pass `as` (e.g. as="a" with href)
 {{#if profileIs.react.18}}
-export const {{name.pascal}} = forwardRef<{{el.refType}}, {{name.pascal}}Props>(function {{name.pascal}}({ {{el.styledParams}} }, ref) {
+{{#unless constExport}}export {{/unless}}const {{name.pascal}} = forwardRef<{{el.refType}}, {{name.pascal}}Props>(function {{name.pascal}}({ {{el.styledParams}} }, ref) {
+{{else}}
+{{#if constExport}}
+const {{name.pascal}} = ({ {{el.styledParams}} }: {{name.pascal}}Props) => {
 {{else}}
 export function {{name.pascal}}({ {{el.styledParams}} }: {{name.pascal}}Props) {
+{{/if}}
 {{/if}}
   return (
     <Root{{#if profileIs.react.18}} ref={ref}{{/if}}{{#if variants}} $variant={variant} $size={size}{{/if}}{{el.typeAttr}} {...props}>
@@ -51,5 +55,13 @@ export function {{name.pascal}}({ {{el.styledParams}} }: {{name.pascal}}Props) {
 });
 {{name.pascal}}.displayName = '{{name.pascal}}';
 {{else}}
+{{#if constExport}}
+};
+{{else}}
 }
+{{/if}}
+{{/if}}
+{{#if constExport}}
+
+export { {{name.pascal}} };
 {{/if}}

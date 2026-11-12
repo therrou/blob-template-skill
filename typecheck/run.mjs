@@ -83,6 +83,8 @@ const RADIX_DEPS = { '@radix-ui/react-select': '^2.1.0', '@radix-ui/react-checkb
 // react17-legacy is outside the matrix and has nothing to check.
 const NEXT_RADIX = { ...RADIX_DEPS, 'server-only': '^0.0.1' };
 const REACT_18_2 = { react: '18.2.0', 'react-dom': '18.2.0' };
+const CONST_EXPORTS = { '.codegen/config.json': JSON.stringify({ exports: 'const' }) };
+
 const STACKS = [
   { fixture: 'next-app-tw4', pack: 'next', deps: { ...reactTypes(19), ...NEXT_RADIX }, files: RADIX_PRIMITIVES },
   { fixture: 'next-pages-tw3', pack: 'next', deps: { ...reactTypes(18), ...NEXT_RADIX }, files: RADIX_PRIMITIVES },
@@ -93,6 +95,10 @@ const STACKS = [
   // Oldest supported: App Router went stable in Next 13.4; React 18.2 is the oldest React 18 still common.
   { name: 'next13.4-app-react18.2', fixture: 'next-app-tw4', pack: 'next', deps: { '@types/react': '18.2.79', '@types/react-dom': '18.2.25', ...NEXT_RADIX }, pin: { next: '13.4.19', ...REACT_18_2 }, files: RADIX_PRIMITIVES },
   { name: 'next13.0-pages-tw3.0', fixture: 'next-pages-tw3', pack: 'next', deps: { '@types/react': '18.2.79', '@types/react-dom': '18.2.25', ...NEXT_RADIX, tailwindcss: '3.0.24' }, pin: { next: '13.0.7', ...REACT_18_2 }, files: RADIX_PRIMITIVES },
+  // The repo setting for const components (`"exports": "const"`), on React 19 + Tailwind, React 18 + Tailwind and React 18 + styled-components.
+  { name: 'next-app-tw4-const', fixture: 'next-app-tw4', pack: 'next', deps: { ...reactTypes(19), ...NEXT_RADIX }, files: { ...RADIX_PRIMITIVES, ...CONST_EXPORTS } },
+  { name: 'next-pages-tw3-const', fixture: 'next-pages-tw3', pack: 'next', deps: { ...reactTypes(18), ...NEXT_RADIX }, files: { ...RADIX_PRIMITIVES, ...CONST_EXPORTS } },
+  { name: 'vite-react18-styled-const', fixture: 'vite-react18-styled', pack: 'react', deps: reactTypes(18), files: CONST_EXPORTS },
   { name: 'next15-app', fixture: 'next-app-tw4', pack: 'next', deps: { ...reactTypes(19), ...NEXT_RADIX }, pin: { next: '~15.5.0' }, files: RADIX_PRIMITIVES },
 ].map((s) => ({ name: s.fixture, ...s }));
 

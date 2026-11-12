@@ -16,7 +16,7 @@ import { describeAllowed, ensureInside, matches, runActions, valueAllowed } from
 import { installCommand, missingDependencies } from './deps.mjs';
 import { elementVars } from './elements.mjs';
 import { parseName } from './names.mjs';
-import { DIMENSIONS, resolveProfile } from './profile.mjs';
+import { DIMENSIONS, readConfig, resolveProfile } from './profile.mjs';
 import { parseRoute } from './route.mjs';
 import { loadHelpers } from './helpers.mjs';
 import { findTodos, render } from './template.mjs';
@@ -172,7 +172,12 @@ export async function plan({ skillDir, root, pack, generator, options }) {
 
 async function planWithProfile({ skillDir, root, pack, generator, options, manifest, gen, profile }) {
   const pkg = readPackageJson(root);
+  const config = readConfig(root);
   const ctx = { ...manifest.vars, ...gen.vars };
+  ctx.constExport = config.exports === 'const';
+  const generators = new Set(listPacks(skillDir).flatMap((p) => Object.keys(loadPack(skillDir, p).generators)));
+  const unknownOut = Object.keys(config.out ?? {}).filter((g) => !generators.has(g));
+  if (unknownOut.length) throw new CodegenError(`Unknown generator ${unknownOut.join(', ')} in "out" of .codegen/config.json. Generators: ${[...generators].join(', ')}.`);
   ctx.profile = Object.fromEntries(Object.entries(profile.dims).map(([dim, { value }]) => [dim, value]));
   ctx.profileIs = Object.fromEntries(
     Object.entries(DIMENSIONS)
@@ -253,7 +258,9 @@ async function planWithProfile({ skillDir, root, pack, generator, options, manif
 
   ctx.asyncParams = Number(ctx.profile.next) >= 15;
 
-  const outDir = path.resolve(root, options.out ?? resolveOut(root, pickOut(gen.out, ctx)));
+  // --out > the repo's .codegen/config.json (folders as written, relative to the root) > the pack's folder.
+  const configOut = config.out?.[generator];
+  const outDir = path.resolve(root, options.out ?? configOut ?? resolveOut(root, pickOut(gen.out, ctx)));
   ensureInside(root, outDir);
 
   const envOf = await templateEnvs(skillDir, root);
