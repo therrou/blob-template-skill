@@ -96,6 +96,11 @@ test('generatorArgs extracts replayable args from agent shell commands', () => {
   assert.equal(generatorArgs('ls scripts'), null);
 });
 
+test('generatorCalls: --format is not generation', () => {
+  const cmd = (command) => JSON.stringify({ type: 'assistant', message: { content: [{ type: 'tool_use', name: 'Bash', input: { command } }] } });
+  assert.deepEqual(generatorCalls(cmd('node .agents/skills/codegen/scripts/generate.mjs --format components/ui/button.tsx')), []);
+});
+
 test('keptRatio ignores TODO and punctuation lines, catches rewrites, and abstains on tiny skeletons', () => {
   const generated = [
     "import type { ComponentProps } from 'react';",

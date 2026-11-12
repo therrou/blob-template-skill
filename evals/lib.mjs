@@ -34,8 +34,8 @@ const parseLines = (streamJson) =>
     }
   });
 
-// Exploring the generator is fine (even in the reuse case); only real generation counts.
-const LOOK_ONLY = /\s--(?:list|help|dry-run|detect)\b/;
+// Exploring the generator or formatting with it is fine (even in the reuse case); only real generation counts.
+const LOOK_ONLY = /\s--(?:list|help|dry-run|detect|format)\b/;
 
 // claude -p --output-format stream-json: one JSON message per line.
 export function generatorCalls(streamJson) {
