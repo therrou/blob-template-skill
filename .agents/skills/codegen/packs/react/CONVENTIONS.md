@@ -6,8 +6,8 @@ These are the defaults behind the templates. They apply to every React-based pac
 
 | Kind | Location | File | Export |
 |---|---|---|---|
-| Component | `components/<kebab>/` | `<kebab>.tsx` + `index.ts` | `export function PascalCase` |
-| Form field | `components/<kebab>/` | `<kebab>.tsx` + `index.ts` | `export function PascalCase` |
+| Component | `components/<kebab>/` | `<kebab>.tsx` (+ `index.ts` with `--with-barrel`) | `export function PascalCase` |
+| Form field | `components/<kebab>/` | `<kebab>.tsx` (+ `index.ts` with `--with-barrel`) | `export function PascalCase` |
 | Hook | `hooks/` | `use-<kebab>.ts` | `export function useThing` |
 | Context | `contexts/` | `<kebab>-context.tsx` | `ThingProvider`, `useThing` |
 | Util | `utils/` (react), `lib/` (next) | `<kebab>.ts` | `export function camelCase` |
@@ -16,7 +16,7 @@ These are the defaults behind the templates. They apply to every React-based pac
 - Folders use `src/` when the repo has one.
 - File names are kebab-case, which avoids case-sensitivity bugs between macOS and Linux CI.
 - Use **named exports only**. The exceptions are files that a framework requires to have a default export (Next `page`/`layout`/`error`, Storybook `meta`).
-- Don't add a repo-wide barrel (`components/index.ts`), because barrels break tree-shaking. The per-folder `index.ts` is fine.
+- Don't add a repo-wide barrel (`components/index.ts`), because barrels break tree-shaking. A per-folder `index.ts` only when the repo's component folders already have one (`--with-barrel`). When the repo has a `components/index.ts`, the generator adds the new component to it.
 
 ## Components
 

@@ -1,1 +1,1 @@
-export * from './{{name.kebab}}';
+export * from './{{name.kebab}}{{#unless withBarrel}}/{{name.kebab}}{{/unless}}';

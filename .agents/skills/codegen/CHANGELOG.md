@@ -3,6 +3,15 @@
 Update a repo's copy by replacing `.agents/skills/codegen/` with the boilerplate version.
 Repo overrides live in `.codegen/templates/` and are never touched by an update.
 
+## 0.5.0 — 2026-11-12
+
+From the two-repo pilot, where every generated file failed the repo's Prettier and the per-component `index.ts` clashed with both teams:
+
+**Breaking:**
+- `component`, `client-component` and `form-field` no longer write `<name>/index.ts`. Pass `--with-barrel` to get it. Without it, the line added to an existing `components/index.ts` points at the file (`./user-card/user-card`).
+
+- Written files are formatted with the repo's own Prettier (found in `node_modules` of the root or a parent folder; never downloaded), using the repo's config and `.prettierignore`. The output's `format` is `{ tool, ok }`, or `null` when the repo has no Prettier. A Prettier failure is reported, never undoes the generation. `todo` line numbers point into the formatted file.
+
 ## 0.4.2 — 2026-11-12
 
 Fixes from the first pilot in two real repos:

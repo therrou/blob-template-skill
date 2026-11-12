@@ -13,23 +13,23 @@ const fixture = path.join(path.dirname(fileURLToPath(import.meta.url)), 'fixture
 
 const CASES = {
   react: {
-    component: ['--element', 'button', '--variants', '--as-child', '--with-test'],
+    component: ['--element', 'button', '--variants', '--as-child', '--with-test', '--with-barrel'],
     hook: ['--with-test'],
     context: [],
     util: ['--with-test'],
     page: ['--with-test'],
-    'form-field': ['--control', 'input', '--with-test'],
+    'form-field': ['--control', 'input', '--with-test', '--with-barrel'],
   },
   next: {
-    component: ['--element', 'button', '--variants', '--as-child', '--with-test'],
-    'client-component': ['--element', 'nav', '--variants'],
+    component: ['--element', 'button', '--variants', '--as-child', '--with-test', '--with-barrel'],
+    'client-component': ['--element', 'nav', '--variants', '--with-barrel'],
     hook: ['--with-test'],
     context: [],
     util: ['--server-only', '--with-test'],
     route: ['--with-layout', '--with-loading', '--with-error'],
     'api-route': ['--with-test'],
     'server-action': [],
-    'form-field': ['--control', 'input', '--with-test'],
+    'form-field': ['--control', 'input', '--with-test', '--with-barrel'],
   },
 };
 

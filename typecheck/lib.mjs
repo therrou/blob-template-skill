@@ -12,15 +12,17 @@ export function matrix(pack, generators) {
   for (const [generator, def] of Object.entries(generators)) {
     const opts = def.options ?? {};
     const test = opts['with-test'] ? ['--with-test'] : [];
+    const barrel = opts['with-barrel'] ? ['--with-barrel'] : [];
     if (opts.element) {
       for (const element of opts.element.choices) {
         COMPONENT_COMBOS.forEach((combo, i) => {
           const extra = i === 0 ? [...test, ...(opts['with-story'] ? ['--with-story'] : [])] : [];
-          add(generator, `${pascal(generator)}${pascal(element)}${combo.map((o) => pascal(o.slice(2))).join('')}`, '--element', element, ...combo, ...extra);
+          // Barrels on every combo: the index.ts re-exports change with --variants.
+          add(generator, `${pascal(generator)}${pascal(element)}${combo.map((o) => pascal(o.slice(2))).join('')}`, '--element', element, ...combo, ...extra, ...barrel);
         });
       }
     } else if (opts.control) {
-      for (const control of opts.control.choices) add(generator, `${pascal(control)}Field`, '--control', control, ...test);
+      for (const control of opts.control.choices) add(generator, `${pascal(control)}Field`, '--control', control, ...test, ...barrel);
     } else if (generator === 'route') {
       add(generator, 'dashboard', ...['with-layout', 'with-loading', 'with-error'].filter((o) => opts[o]).map((o) => `--${o}`));
       add(generator, 'blog/[slug]');

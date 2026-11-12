@@ -7,6 +7,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { CodegenError } from './lib/errors.mjs';
+import { formatFiles, relocateTodos } from './lib/format.mjs';
 import { GLOBAL_OPTIONS, checkWritable, listPacks, loadPack, plan, write } from './lib/generate.mjs';
 import { resolveProfile } from './lib/profile.mjs';
 
@@ -78,9 +79,12 @@ async function main() {
   }
 
   write(result.files);
+  const format = formatFiles(root, [...created, ...modified]);
+  if (format?.ok) summary.todo = relocateTodos(root, summary.todo);
   print({
     ok: true,
     ...summary,
+    format,
     next: [
       'Resolve every todo item (remove each TODO(codegen) marker).',
       'Run check-tokens.mjs on the created and modified files, then the repo\'s lint/typecheck.',

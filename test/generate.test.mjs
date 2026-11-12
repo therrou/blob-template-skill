@@ -9,12 +9,12 @@ test('react component: kebab folder under src/, named export, cn import, no test
   const root = makeRepo({ deps: { vitest: '^2' }, dirs: ['src'] });
   const { status, json } = run(root, 'react', 'component', '--name', 'UserCard', '--element', 'article', '--cn', '@/lib/utils');
   assert.equal(status, 0, JSON.stringify(json));
-  assert.deepEqual(json.created, ['src/components/user-card/user-card.tsx', 'src/components/user-card/index.ts']);
+  assert.deepEqual(json.created, ['src/components/user-card/user-card.tsx']);
   const src = read(root, 'src/components/user-card/user-card.tsx');
   assert.match(src, /import \{ cn \} from '@\/lib\/utils';/);
   assert.match(src, /export function UserCard\(/);
   assert.doesNotMatch(src, /export default/);
-  assert.match(read(root, 'src/components/user-card/index.ts'), /export \{ UserCard \} from '\.\/user-card';/);
+  assert.equal(fs.existsSync(path.join(root, 'src/components/user-card/index.ts')), false);
   assert.ok(json.todo.length > 0);
   assert.ok(json.todo.every((t) => t.file && t.line > 0 && t.text));
 });
@@ -60,7 +60,7 @@ test('next component is a Server Component (no use client)', () => {
 
 test('existing files abort the whole generation (atomic, never overwrite)', () => {
   const root = makeRepo({ files: { 'components/card/index.ts': 'keep me' } });
-  const { status, json } = run(root, 'react', 'component', '--name', 'card', '--element', 'div');
+  const { status, json } = run(root, 'react', 'component', '--name', 'card', '--element', 'div', '--with-barrel');
   assert.equal(status, 1);
   assert.deepEqual(json.conflicts, ['components/card/index.ts']);
   assert.equal(fs.existsSync(path.join(root, 'components/card/card.tsx')), false);
@@ -191,7 +191,7 @@ test('--variants needs class-variance-authority; then generates cva with the det
     deps: { 'class-variance-authority': '^0.7' },
     files: { 'components.json': JSON.stringify({ aliases: { utils: '@/lib/utils', ui: '@/components/ui' } }) },
   });
-  const { status, json } = run(root, 'react', 'component', '--name', 'Badge', '--element', 'span', '--variants');
+  const { status, json } = run(root, 'react', 'component', '--name', 'Badge', '--element', 'span', '--variants', '--with-barrel');
   assert.equal(status, 0, JSON.stringify(json));
   const src = read(root, 'components/badge/badge.tsx');
   assert.match(src, /import \{ cva, type VariantProps \} from 'class-variance-authority';/);
@@ -225,7 +225,7 @@ test('every element × variants × as-child × cn combination renders consistent
       for (const variants of [false, true]) {
         for (const asChild of [false, true]) {
          for (const react of ['18', '19']) {
-          const options = { name: `x-${element}`, element, profile: `react=${react}`, ...(variants && { variants: true }), ...(asChild && { 'as-child': true }) };
+          const options = { name: `x-${element}`, element, profile: `react=${react}`, 'with-barrel': true, ...(variants && { variants: true }), ...(asChild && { 'as-child': true }) };
           const [main, index] = (await plan({ skillDir, root, pack: 'react', generator: 'component', options })).files;
           const src = main.content;
           const label = `${element} variants=${variants} asChild=${asChild} react=${react}`;
@@ -291,7 +291,7 @@ test('form-field input (next): client component wired to the form primitives in 
   const root = formRepo(['input'], { deps: { next: '^15' } });
   const { status, json } = run(root, 'next', 'form-field', '--name', 'EmailField', '--control', 'input');
   assert.equal(status, 0, JSON.stringify(json));
-  assert.deepEqual(json.created, ['src/components/email-field/email-field.tsx', 'src/components/email-field/index.ts']);
+  assert.deepEqual(json.created, ['src/components/email-field/email-field.tsx']);
   const src = read(root, 'src/components/email-field/email-field.tsx');
   assert.match(src, /^'use client';/);
   assert.match(src, /import \{ useFormContext, type FieldPath, type FieldValues \} from 'react-hook-form';/);
@@ -344,7 +344,41 @@ test('component registers itself in an existing components barrel, idempotently'
   const root = makeRepo({ files: { 'components/index.ts': "export * from './a';\n" } });
   const { json } = run(root, 'next', 'component', '--name', 'UserCard', '--element', 'article');
   assert.deepEqual(json.modified, ['components/index.ts']);
-  assert.equal(read(root, 'components/index.ts'), "export * from './a';\nexport * from './user-card';\n");
+  assert.equal(read(root, 'components/index.ts'), "export * from './a';\nexport * from './user-card/user-card';\n");
+});
+
+test('--with-barrel adds the folder index.ts, and the components barrel points at the folder', () => {
+  const root = makeRepo({ files: { 'components/index.ts': '' } });
+  const { json } = run(root, 'react', 'component', '--name', 'UserCard', '--element', 'article', '--with-barrel');
+  assert.deepEqual(json.created, ['components/user-card/user-card.tsx', 'components/user-card/index.ts']);
+  assert.equal(read(root, 'components/index.ts'), "export * from './user-card';\n");
+});
+
+// A stand-in for the repo's Prettier: prefixes each file with a line, so formatting and moved todo lines are visible.
+const fakePrettier = (bin) => ({
+  'node_modules/prettier/package.json': JSON.stringify({ name: 'prettier', bin }),
+  [`node_modules/prettier/${bin.replace('./', '')}`]:
+    "const fs = require('fs');\nfor (const f of process.argv.slice(2).filter((a) => !a.startsWith('--'))) fs.writeFileSync(f, '// formatted\\n' + fs.readFileSync(f, 'utf8'));\n",
+});
+
+test("written files go through the repo's Prettier, and todo lines follow the formatted file", () => {
+  const plain = run(makeRepo(), 'react', 'hook', '--name', 'useThing').json;
+  assert.equal(plain.format, null);
+  const root = makeRepo({ files: fakePrettier('./bin/prettier.cjs') });
+  const { json } = run(root, 'react', 'hook', '--name', 'useThing');
+  assert.deepEqual(json.format, { tool: 'prettier', ok: true });
+  assert.match(read(root, 'hooks/use-thing.ts'), /^\/\/ formatted\n/);
+  assert.deepEqual(json.todo.map((t) => t.line), plain.todo.map((t) => t.line + 1));
+});
+
+test('Prettier 2 bin layout and a failing formatter: files stay written, the error is reported', () => {
+  const root = makeRepo({ files: { ...fakePrettier('./bin-prettier.js'), 'node_modules/prettier/package.json': JSON.stringify({ bin: { prettier: './bin-prettier.js' } }) } });
+  assert.equal(run(root, 'react', 'util', '--name', 'a').json.format.ok, true);
+  fs.writeFileSync(path.join(root, 'node_modules/prettier/bin-prettier.js'), "console.error('[error] boom'); process.exit(2);\n");
+  const { status, json } = run(root, 'react', 'util', '--name', 'b');
+  assert.equal(status, 0);
+  assert.deepEqual(json.format, { tool: 'prettier', ok: false, error: '[error] boom' });
+  assert.ok(fs.existsSync(path.join(root, 'utils/b.ts')));
 });
 
 test('no barrel, no change: the append is reported as skipped', () => {
@@ -379,7 +413,7 @@ test('--detect prints the profile; every result carries it', () => {
 
 test('react 18 components forward refs; react 19 is unchanged', () => {
   const root = makeRepo({ deps: { react: '^18.3' } });
-  run(root, 'react', 'component', '--name', 'Card', '--element', 'article');
+  run(root, 'react', 'component', '--name', 'Card', '--element', 'article', '--with-barrel');
   const src = read(root, 'components/card/card.tsx');
   assert.match(src, /import \{ forwardRef, type ComponentPropsWithoutRef \} from 'react';/);
   assert.match(src, /export const Card = forwardRef<HTMLElement, CardProps>\(function Card\(\{ className, children, \.\.\.props \}, ref\) \{/);

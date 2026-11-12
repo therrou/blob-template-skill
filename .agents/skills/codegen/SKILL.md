@@ -23,10 +23,12 @@ Paths below are relative to the repo root: `SKILL=.agents/skills/codegen`.
    - Form inputs: use `form-field --control input|textarea|select|checkbox`, not `component`.
    - `cn()` is detected automatically; pass `--cn <import path>` only to override.
    - Add `--with-test` or `--with-story` only when the user asks or the repo requires them.
+   - Components and form fields get no `index.ts` by default. Add `--with-barrel` only when the existing component folders have their own `index.ts`.
 5. **Generate** from the app root (the folder that holds its `package.json`), or pass `--root`:
    `node $SKILL/scripts/generate.mjs <pack> <generator> --name <name> [options]`
    - Unsure where the files will land? Run with `--dry-run` first.
    - The output lists `created`, `modified` (existing files the generator edited, such as a barrel) and `skipped`.
+   - When the repo has Prettier installed, the written files are formatted with it; `format` in the output says so. `format.ok: false` means Prettier failed on them: the files are written, run the repo's format script yourself.
    - An error from a `modify` or `append` step means the target file isn't in the shape the generator expects. Tell the user; don't hand-edit around it.
    - An error saying something "is not supported" means the stack or option is outside the support matrix. Tell the user; don't hand-write around it.
    - Output of `ok: false` with `conflicts` means the files already exist. Reuse them or choose another name. Never delete files in order to regenerate them.

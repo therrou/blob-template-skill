@@ -14,10 +14,10 @@ test('matrix covers every generator, element and option combination with unique 
     assert.equal(new Set(names).size, names.length, `${pack}: duplicate names`);
     const buttons = calls.filter((c) => c[1] === 'component' && c.includes('button'));
     assert.deepEqual(buttons.map((c) => c.slice(4).join(' ')), [
-      '--element button --with-test --with-story',
-      '--element button --variants',
-      '--element button --as-child',
-      '--element button --variants --as-child',
+      '--element button --with-test --with-story --with-barrel',
+      '--element button --variants --with-barrel',
+      '--element button --as-child --with-barrel',
+      '--element button --variants --as-child --with-barrel',
     ]);
   }
 });

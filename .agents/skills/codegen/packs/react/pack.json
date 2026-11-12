@@ -4,7 +4,7 @@
   "generators": {
     "component": {
       "supports": { "react": ["18", "19"], "styling": ["tailwind-3", "tailwind-4", "styled-components", "emotion", "plain"], "primitives": ["radix", "base", "none"] },
-      "description": "Presentational component in its own kebab-case folder with an index barrel.",
+      "description": "Presentational component in its own kebab-case folder.",
       "out": "components",
       "options": {
         "element": { "type": "string", "required": true, "choices": ["div", "span", "section", "article", "aside", "nav", "header", "footer", "main", "ul", "ol", "li", "button", "a", "form", "label", "p", "h1", "h2", "h3", "h4", "h5", "h6"], "description": "Semantic root element. Pick the most meaningful one (button for actions, a for navigation, nav/section/article for regions); div only when nothing else fits." },
@@ -12,12 +12,13 @@
         "as-child": { "type": "boolean", "supports": { "styling": ["tailwind-3", "tailwind-4", "plain"] }, "requires": [{ "package": "@radix-ui/react-slot|radix-ui", "when": { "primitives": ["radix", "none"] } }, { "package": "@base-ui/react", "when": { "primitives": "base" } }], "description": "Add asChild (Radix Slot) so callers can render it as their own element, e.g. a link." },
         "cn": { "type": "string", "description": "Import path of the repo's cn() helper. Auto-detected from components.json or lib/utils; pass only to override." },
         "with-test": { "type": "boolean", "description": "Add a Testing Library test." },
+        "with-barrel": { "type": "boolean", "description": "Add an index.ts that re-exports the component. Only when the repo's component folders have one." },
         "with-story": { "type": "boolean", "description": "Add a Storybook CSF3 story (requires .storybook/)." }
       },
       "files": [
         { "template": "component/component.tsx.tpl", "path": "{{name.kebab}}/{{name.kebab}}.tsx", "when": { "styling": ["tailwind-3", "tailwind-4", "plain"] } },
         { "template": "component/component.styled.tsx.tpl", "path": "{{name.kebab}}/{{name.kebab}}.tsx", "when": { "styling": ["styled-components", "emotion"] } },
-        { "template": "component/index.ts.tpl", "path": "{{name.kebab}}/index.ts" },
+        { "template": "component/index.ts.tpl", "path": "{{name.kebab}}/index.ts", "when": "withBarrel" },
         { "template": "component/component.test.tsx.tpl", "path": "{{name.kebab}}/{{name.kebab}}.test.tsx", "when": "withTest" },
         { "template": "component/component.stories.tsx.tpl", "path": "{{name.kebab}}/{{name.kebab}}.stories.tsx", "when": "withStory" }
       ],
@@ -73,11 +74,12 @@
       "requiresUi": ["form", "{{control}}"],
       "options": {
         "control": { "type": "string", "required": true, "choices": ["input", "textarea", "select", "checkbox"], "description": "Which shadcn control the field renders." },
-        "with-test": { "type": "boolean", "description": "Add a Testing Library test inside a Form harness." }
+        "with-test": { "type": "boolean", "description": "Add a Testing Library test inside a Form harness." },
+        "with-barrel": { "type": "boolean", "description": "Add an index.ts that re-exports the component. Only when the repo's component folders have one." }
       },
       "files": [
         { "template": "form-field/form-field.tsx.tpl", "path": "{{name.kebab}}/{{name.kebab}}.tsx" },
-        { "template": "form-field/index.ts.tpl", "path": "{{name.kebab}}/index.ts" },
+        { "template": "form-field/index.ts.tpl", "path": "{{name.kebab}}/index.ts", "when": "withBarrel" },
         { "template": "form-field/form-field.test.tsx.tpl", "path": "{{name.kebab}}/{{name.kebab}}.test.tsx", "when": "withTest" }
       ],
       "actions": [{ "type": "append", "path": "index.ts", "template": "barrel/export.ts.tpl", "skipIfMissing": true }]
