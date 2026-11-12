@@ -42,9 +42,11 @@ export function generatorCalls(streamJson) {
   return parseLines(streamJson).flatMap((msg) => {
     if (msg.type !== 'assistant') return [];
     return (msg.message?.content ?? [])
-      .filter((block) => block.type === 'tool_use' && block.name === 'Bash' && /generate\.mjs/.test(block.input?.command ?? ''))
-      .map((block) => block.input.command)
-      .filter((command) => !LOOK_ONLY.test(command));
+      .filter((block) => block.type === 'tool_use' && block.name === 'Bash')
+      // One Bash call can chain a dry-run and the real call: judge each shell segment on its own.
+      .flatMap((block) => (block.input?.command ?? '').split(/&&|\|\||[;|\n]/))
+      .map((segment) => segment.trim())
+      .filter((segment) => /generate\.mjs/.test(segment) && !LOOK_ONLY.test(segment));
   });
 }
 

@@ -162,3 +162,9 @@ test('generatorCalls ignores look-only calls (--list, --help, --dry-run)', () =>
   ].join('\n');
   assert.deepEqual(generatorCalls(stream), ['node .agents/skills/codegen/scripts/generate.mjs next hook --name x']);
 });
+
+test('generatorCalls splits chained commands: a dry-run and a real call in one Bash call', () => {
+  const command = 'node $S/generate.mjs next hook --name d --dry-run 2>&1; echo; node $S/generate.mjs next hook --name d 2>&1 | head && cat x';
+  const stream = JSON.stringify({ type: 'assistant', message: { content: [{ type: 'tool_use', name: 'Bash', input: { command } }] } });
+  assert.deepEqual(generatorCalls(stream), ['node $S/generate.mjs next hook --name d 2>&1']);
+});

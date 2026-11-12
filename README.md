@@ -162,7 +162,7 @@ npm run eval -- --fixture next-pages-tw3 --model sonnet
 npm run eval -- --compare evals/results/<a>/summary.json evals/results/<b>/summary.json
 ```
 
-Each run writes `evals/results/<date>-v<version>-<model>/`: `summary.json` (pass rate per case, cost, turns, tool calls, kept ratio) and one transcript per run. The folder is git-ignored. Baselines worth keeping live in `evals/baselines/` (`v0.4.0-sonnet.json`: 48/48); compare a new run against one with `--compare`.
+Each run writes `evals/results/<date>-v<version>-<model>/`: `summary.json` (pass rate per case, cost, turns, tool calls, kept ratio) and one transcript per run. The folder is git-ignored. Baselines worth keeping live in `evals/baselines/` (`v0.4.0-sonnet.json` and `v0.4.1-haiku.json`, both 48/48); compare a new run against one with `--compare`.
 
 ## Generated-code type check
 
