@@ -371,6 +371,16 @@ test("written files go through the repo's Prettier, and todo lines follow the fo
   assert.deepEqual(json.todo.map((t) => t.line), plain.todo.map((t) => t.line + 1));
 });
 
+test('--format formats any files with the repo Prettier; without one it is a no-op', () => {
+  const root = makeRepo({ files: { ...fakePrettier('./bin/prettier.cjs'), 'src/a.ts': 'a\n', 'src/b.ts': 'b\n' } });
+  const { status, json } = run(root, '--format', 'src/a.ts', 'src/b.ts');
+  assert.equal(status, 0);
+  assert.deepEqual(json, { ok: true, format: { tool: 'prettier', ok: true } });
+  assert.equal(read(root, 'src/b.ts'), '// formatted\nb\n');
+  assert.deepEqual(run(makeRepo({ files: { 'a.ts': '' } }), '--format', 'a.ts').json, { ok: true, format: null });
+  assert.equal(run(root, '--format').status, 1);
+});
+
 test('Prettier 2 bin layout and a failing formatter: files stay written, the error is reported', () => {
   const root = makeRepo({ files: { ...fakePrettier('./bin-prettier.js'), 'node_modules/prettier/package.json': JSON.stringify({ bin: { prettier: './bin-prettier.js' } }) } });
   assert.equal(run(root, 'react', 'util', '--name', 'a').json.format.ok, true);

@@ -93,24 +93,35 @@ export function generatorArgs(command) {
   return args;
 }
 
-// Share of the generator's skeleton lines the agent kept. TODO lines are meant to be replaced and punctuation-only
-// lines (`);`, `}`) match anything, so neither counts.
-// A low value means the agent rewrote the generated file instead of filling it in.
+// Share of the generator's skeleton lines the agent kept. TODO lines and guidance comments are meant to go, and
+// punctuation-only lines (`);`, `}`) match anything, so none of them count.
+// A line counts as kept when one final line has most of its words: filling in `cva('', {` or dropping an unused
+// `children` keeps the line, a rewrite in another shape doesn't. A low value means the file was rewritten by hand.
 // null when the skeleton is too small to say (hooks, API routes: nearly every line is a placeholder).
 const MIN_COUNTED_LINES = 8;
+const LINE_SIMILARITY = 0.6;
+const words = (line) => line.match(/\w+/g) ?? [];
 export function keptRatio(generated, final) {
   const lines = generated
     .split('\n')
     .map((l) => l.trim())
-    .filter((l) => /\w/.test(l) && !l.includes('TODO(codegen)'));
+    .filter((l) => /\w/.test(l) && !l.includes('TODO(codegen)') && !/^(\/\/|\/\*|\*|\{\/\*)/.test(l));
   if (lines.length < MIN_COUNTED_LINES) return null;
-  const pool = new Map();
-  for (const l of final.split('\n').map((x) => x.trim())) pool.set(l, (pool.get(l) ?? 0) + 1);
+  const pool = final.split('\n').map((l) => new Set(words(l)));
+  const used = new Set();
   let kept = 0;
-  for (const l of lines) {
-    if (pool.get(l)) {
+  for (const line of lines) {
+    const w = words(line);
+    let best = -1;
+    let score = 0;
+    pool.forEach((candidate, i) => {
+      if (used.has(i)) return;
+      const s = w.filter((x) => candidate.has(x)).length / w.length;
+      if (s > score) [best, score] = [i, s];
+    });
+    if (score >= LINE_SIMILARITY) {
+      used.add(best);
       kept++;
-      pool.set(l, pool.get(l) - 1);
     }
   }
   return kept / lines.length;

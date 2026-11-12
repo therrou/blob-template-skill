@@ -28,13 +28,16 @@ Paths below are relative to the repo root: `SKILL=.agents/skills/codegen`.
    `node $SKILL/scripts/generate.mjs <pack> <generator> --name <name> [options]`
    - Unsure where the files will land? Run with `--dry-run` first.
    - The output lists `created`, `modified` (existing files the generator edited, such as a barrel) and `skipped`.
-   - When the repo has Prettier installed, the written files are formatted with it; `format` in the output says so. `format.ok: false` means Prettier failed on them: the files are written, run the repo's format script yourself.
+   - When the repo has Prettier installed, the written files are formatted with it; `format` in the output says so. `format.ok: false` means Prettier failed on them: the files are written; fix the cause and format them in step 7.
    - An error from a `modify` or `append` step means the target file isn't in the shape the generator expects. Tell the user; don't hand-edit around it.
    - An error saying something "is not supported" means the stack or option is outside the support matrix. Tell the user; don't hand-write around it.
    - Output of `ok: false` with `conflicts` means the files already exist. Reuse them or choose another name. Never delete files in order to regenerate them.
    - Output of `ok: false` with `missing` / `missingUi` means a package or shadcn primitive is missing. Show the user the `install` command and ask before running it, then rerun the generator.
 6. **Fill in** every item in the output's `todo` list, and remove each `TODO(codegen)` marker.
-7. **Verify**: `node $SKILL/scripts/check-tokens.mjs <created, modified and edited files>` must exit 0. Fix every violation. Then run the repo's own lint and typecheck, plus the tests if you generated any.
+7. **Verify**, on every file you created, generated or edited:
+   - `node $SKILL/scripts/generate.mjs --format <files>` formats them with the repo's Prettier (`format: null` means the repo has none).
+   - `node $SKILL/scripts/check-tokens.mjs <files>` must exit 0. Fix every violation.
+   - Then run the repo's own lint and typecheck, plus the tests if you generated any. Fix lint errors in your code; don't disable the rule.
 
 ## Styling in one line
 
@@ -47,7 +50,7 @@ To change a template for one repo, copy it from `$SKILL/packs/<pack>/templates/<
 ## Red flags
 
 - You are about to hand-write a component, hook, route or action file. Run the generator instead.
-- You are about to report the task done while `TODO(codegen)` markers remain, or without having run `check-tokens`.
+- You are about to report the task done while `TODO(codegen)` markers remain, or without having run `--format` and `check-tokens`.
 - You are about to add `'use client'` to a page, a layout, or a large component. Extract a small client leaf instead.
 - You are about to pick `--element div` for something users click, or a list, heading or landmark.
 - You are about to install a package or shadcn primitive without asking the user.

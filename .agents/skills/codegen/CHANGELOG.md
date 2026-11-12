@@ -3,6 +3,11 @@
 Update a repo's copy by replacing `.agents/skills/codegen/` with the boilerplate version.
 Repo overrides live in `.codegen/templates/` and are never touched by an update.
 
+## 0.5.1 — 2026-11-12
+
+From the second pilot round, where the agent rewrote hook skeletons after the generator had formatted them:
+- `generate.mjs --format <files>` formats any files with the repo's Prettier, so agents can format their own edits even when only `node` is allowed. SKILL.md's verify step runs it before `check-tokens`.
+
 ## 0.5.0 — 2026-11-12
 
 From the two-repo pilot, where every generated file failed the repo's Prettier and the per-component `index.ts` clashed with both teams:

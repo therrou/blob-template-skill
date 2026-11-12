@@ -2,6 +2,7 @@
 // Zero-dependency code generator. Always prints JSON to stdout; exit code 1 on error.
 //
 //   node generate.mjs --list [pack]
+//   node generate.mjs --format <files…>   (the repo's Prettier, if installed)
 //   node generate.mjs <pack> <generator> --name <name> [--out dir] [--dry-run] [generator options]
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -58,6 +59,14 @@ async function main() {
     if (options.root === true || options.profile === true) throw new CodegenError('--root and --profile need a value.');
     return print({ ok: true, profile: resolveProfile(path.resolve(options.root ?? process.cwd()), options.profile).dims });
   }
+  if (options.format) {
+    // The agent's own edits: format them with the repo's Prettier, which may not be runnable directly.
+    const files = [...(typeof options.format === 'string' ? [options.format] : []), ...positional].map((f) => path.resolve(f));
+    if (!files.length) throw new CodegenError('--format needs the files to format.');
+    const root = path.resolve(typeof options.root === 'string' ? options.root : process.cwd());
+    const format = formatFiles(root, files);
+    return print({ ok: format?.ok ?? true, format }, format?.ok === false ? 1 : 0);
+  }
   if (options.list || options.help || positional.length === 0) return print(describe(positional[0]));
 
   const [pack, generator] = positional;
@@ -87,7 +96,7 @@ async function main() {
     format,
     next: [
       'Resolve every todo item (remove each TODO(codegen) marker).',
-      'Run check-tokens.mjs on the created and modified files, then the repo\'s lint/typecheck.',
+      'Format your edits with generate.mjs --format <files>, run check-tokens.mjs on them, then the repo\'s lint/typecheck.',
     ],
   });
 }

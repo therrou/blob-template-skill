@@ -113,8 +113,51 @@ test('keptRatio ignores TODO and punctuation lines, catches rewrites, and abstai
     '}',
   ].join('\n');
   assert.equal(keptRatio(generated, generated), 1);
-  assert.equal(keptRatio(generated, "import { cn } from '@/lib/utils';\nconst Card = (p) => <div>{p.x}</div>;\nexport default Card;"), 1 / 9);
+  assert.equal(keptRatio(generated, "import { cn } from '@/lib/utils';\nconst Card = (p) => <div>{p.x}</div>;\nexport default Card;"), 1 / 8);
   assert.equal(keptRatio('export function useX() {\n  // TODO(codegen): x\n  return {};\n}', ''), null);
+});
+
+test('keptRatio: filling in placeholders and collapsing JSX keeps the skeleton; another shape does not', () => {
+  const generated = [
+    "import { cva, type VariantProps } from 'class-variance-authority';",
+    "import { cn } from '@/lib/utils';",
+    '// Server Component by default.',
+    "export const badgeVariants = cva('', {",
+    '  variants: {',
+    '    // TODO(codegen): variants',
+    "    variant: { default: '' },",
+    "    size: { default: '' },",
+    '  },',
+    "  defaultVariants: { variant: 'default', size: 'default' },",
+    '});',
+    "export type BadgeProps = ComponentProps<'span'> & VariantProps<typeof badgeVariants> & {",
+    '};',
+    'export function Badge({ className, variant, size, children, ...props }: BadgeProps) {',
+    '  return (',
+    '    <span className={cn(badgeVariants({ variant, size }), className)} {...props}>',
+    '      {children}',
+    '    </span>',
+    '  );',
+    '}',
+  ].join('\n');
+  const filledIn = [
+    "import { cva, type VariantProps } from 'class-variance-authority';",
+    "import { cn } from '@/lib/utils';",
+    "export const badgeVariants = cva('inline-flex items-center', {",
+    '  variants: {',
+    "    variant: { success: 'bg-success', neutral: 'bg-muted' },",
+    "    size: { sm: 'text-xs', md: 'text-sm' },",
+    '  },',
+    "  defaultVariants: { variant: 'neutral', size: 'md' },",
+    '});',
+    "export type BadgeProps = ComponentProps<'span'> & VariantProps<typeof badgeVariants>;",
+    'export function Badge({ className, variant, size, ...props }: BadgeProps) {',
+    '  return <span className={cn(badgeVariants({ variant, size }), className)} {...props} />;',
+    '}',
+  ].join('\n');
+  assert.ok(keptRatio(generated, filledIn) >= 0.6, String(keptRatio(generated, filledIn)));
+  const rewrite = "import { cn } from '@/lib/utils';\nconst styles = { success: 'bg-success' };\nexport const Badge = ({ tone = 'success', className, ...rest }) => <span className={cn(styles[tone], className)} {...rest} />;\n";
+  assert.ok(keptRatio(generated, rewrite) < 0.4, String(keptRatio(generated, rewrite)));
 });
 
 test('lostExports: function and const exports must survive, types and async may change', () => {
