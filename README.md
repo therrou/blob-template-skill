@@ -65,7 +65,8 @@ The generator detects the stack first (`generate.mjs --detect`) and picks templa
 - Versions come from `node_modules` (walking up for monorepos), else the `package.json` range. A library that isn't installed counts as its newest supported version (source `default`).
 - Older versions (React 17, Next 12, Tailwind 2, React Aria–flavoured shadcn) are refused by the generators that depend on them, with the supported values in the message.
 - Override detection with `.codegen/config.json` (`{ "profile": { "app": "next-pages" } }`) or `--profile app=next-pages,react=18`. The flag wins over the file, which wins over detection. Unknown keys or values are errors.
-- The same file sets repo conventions: `"out": { "util": "src/utils" }` (a generator's folder, relative to the root; `--out` still wins) and `"exports": "const"` (components as `const X = …` + `export { X }` with a local props type).
+- The same file sets repo conventions: `"out": { "util": "src/utils" }` (a generator's folder, relative to the root; `--out` still wins) and `"exports"`. `"const"` writes components and form fields as `const X = …` + `export { X }` with a local props type. A map sets the style per generator, e.g. `{ "component": "const", "hook": "inline", "util": "const", "route": "const" }`. Styles are `function` (default), `const` (one export list, or `export default X` for route files) and `inline` (`export const x = …`; not for components). API route handlers stay `export async function GET`.
+- `--detect` also reads the existing code and returns `conventions`: per-generator style and folder counts, and under `suggest` the config values that are clear (at least 5 files, at least twice as common as each alternative) and not set yet. The agent proposes them to the user; nothing is written automatically.
 
 ## Template syntax
 
@@ -167,7 +168,7 @@ Each run writes `evals/results/<date>-v<version>-<model>/`: `summary.json` (pass
 
 ## Generated-code type check
 
-`npm run typecheck` checks that what the generator writes compiles against the real packages. It covers twelve stacks: the supported sample apps in `evals/fixtures/`, an MUI variant of the Emotion app, and pinned copies for the oldest supported versions (Next 13.0 Pages Router with Tailwind 3.0, Next 13.4 App Router, both on React 18.2) and for Next 15, plus three with `"exports": "const"`. For each one it:
+`npm run typecheck` checks that what the generator writes compiles against the real packages. It covers twelve stacks: the supported sample apps in `evals/fixtures/`, an MUI variant of the Emotion app, and pinned copies for the oldest supported versions (Next 13.0 Pages Router with Tailwind 3.0, Next 13.4 App Router, both on React 18.2) and for Next 15, plus three with per-generator `"exports"` maps (const and inline, checked file by file). For each one it:
 
 1. Installs the app's dependencies, plus types, vitest, Testing Library and Storybook. They are cached in `~/.cache/codegen-typecheck/` and reinstalled only when the dependency list changes, so the first run needs network.
 2. Runs every generator in a fresh copy, with every `--element` and every `--variants` / `--as-child` combination, plus `--with-test` and `--with-story`. That's about 200 calls and 480 files per Next stack.

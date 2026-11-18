@@ -122,9 +122,7 @@ export function detectProfile(root) {
 
 const CONFIG_FILE = path.join('.codegen', 'config.json');
 const CONFIG_KEYS = ['profile', 'out', 'exports'];
-const EXPORT_STYLES = ['function', 'const'];
-
-// { profile: { dim: value }, out: { generator: folder }, exports: 'function' | 'const' }
+// { profile: { dim: value }, out: { generator: folder }, exports: 'function' | 'const' | { generator: style } }
 export function readConfig(root) {
   const file = path.join(root, CONFIG_FILE);
   if (!fs.existsSync(file)) return {};
@@ -141,8 +139,9 @@ export function readConfig(root) {
   if (out !== undefined && (typeof out !== 'object' || out === null || Array.isArray(out) || !Object.values(out).every((v) => typeof v === 'string' && v))) {
     throw new CodegenError('"out" in .codegen/config.json must map generator names to folders, e.g. { "util": "src/utils" }.');
   }
-  if (exports !== undefined && !EXPORT_STYLES.includes(exports)) {
-    throw new CodegenError(`"exports" in .codegen/config.json must be one of: ${EXPORT_STYLES.join(', ')}. Got "${exports}".`);
+  const isMap = typeof exports === 'object' && exports !== null && !Array.isArray(exports) && Object.values(exports).every((v) => typeof v === 'string');
+  if (exports !== undefined && !['function', 'const'].includes(exports) && !isMap) {
+    throw new CodegenError(`"exports" in .codegen/config.json must be "function", "const" or an object of generator styles, e.g. { "hook": "inline" }. Got ${JSON.stringify(exports)}.`);
   }
   return config ?? {};
 }

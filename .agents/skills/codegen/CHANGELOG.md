@@ -3,6 +3,14 @@
 Update a repo's copy by replacing `.agents/skills/codegen/` with the boilerplate version.
 Repo overrides live in `.codegen/templates/` and are never touched by an update.
 
+## 0.7.0 — 2026-11-18
+
+Export styles for every generator, and detection of the repo's conventions (real repos often write hooks as `export const` while keeping route handlers as functions):
+- `"exports"` in `.codegen/config.json` also takes a map per generator: `{ "component": "const", "hook": "inline", "route": "const" }`. Styles: `function` (default), `const` (local declarations + one `export { }`; `const X = …; export default X` for route files) and `inline` (`export const x = …`). hook, util, context, page and server-action take all three; component, client-component, form-field and route take function or const; api-route stays `export async function`.
+- The string `"exports": "const"` now covers form-field as well as components.
+- `--detect` returns `conventions`: export style and folder counts per generator, and `suggest` with the config values that are clear (at least 5 files, at least twice as common as each alternative) and not yet set. SKILL.md tells the agent to propose them to the user and write them only on a yes. On two pilot repos it reproduces the configs written by hand.
+- `npm run typecheck` gives its three const stacks per-generator maps (const and inline) and checks every generated file has its style.
+
 ## 0.6.1 — 2026-11-12
 
 From pilot round 4 and the 0.6.0 evals, where agents chained `--format` with `npx eslint` and a denied `npx` stopped the format too:

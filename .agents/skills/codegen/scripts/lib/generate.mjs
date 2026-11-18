@@ -12,6 +12,7 @@ import {
   resolveAliasDir,
   resolveOut,
 } from './detect.mjs';
+import { COMPONENT_GENERATORS, EXPORT_STYLES } from './conventions.mjs';
 import { describeAllowed, ensureInside, matches, runActions, valueAllowed } from './actions.mjs';
 import { installCommand, missingDependencies } from './deps.mjs';
 import { elementVars } from './elements.mjs';
@@ -174,10 +175,17 @@ async function planWithProfile({ skillDir, root, pack, generator, options, manif
   const pkg = readPackageJson(root);
   const config = readConfig(root);
   const ctx = { ...manifest.vars, ...gen.vars };
-  ctx.constExport = config.exports === 'const';
   const generators = new Set(listPacks(skillDir).flatMap((p) => Object.keys(loadPack(skillDir, p).generators)));
-  const unknownOut = Object.keys(config.out ?? {}).filter((g) => !generators.has(g));
-  if (unknownOut.length) throw new CodegenError(`Unknown generator ${unknownOut.join(', ')} in "out" of .codegen/config.json. Generators: ${[...generators].join(', ')}.`);
+  for (const key of ['out', 'exports']) {
+    const unknown = Object.keys(typeof config[key] === 'object' ? config[key] : {}).filter((g) => !generators.has(g));
+    if (unknown.length) throw new CodegenError(`Unknown generator ${unknown.join(', ')} in "${key}" of .codegen/config.json. Generators: ${[...generators].join(', ')}.`);
+  }
+  const exportsMap = typeof config.exports === 'string' ? Object.fromEntries(COMPONENT_GENERATORS.map((g) => [g, config.exports])) : (config.exports ?? {});
+  const exportStyle = exportsMap[generator] ?? 'function';
+  const allowedStyles = EXPORT_STYLES[generator] ?? ['function'];
+  if (!allowedStyles.includes(exportStyle)) throw new CodegenError(`"exports" for ${generator} must be one of: ${allowedStyles.join(', ')}. Got "${exportStyle}".`);
+  ctx.exportIs = Object.fromEntries(['function', 'const', 'inline'].map((s) => [s, s === exportStyle]));
+  ctx.constExport = ctx.exportIs.const;
   ctx.profile = Object.fromEntries(Object.entries(profile.dims).map(([dim, { value }]) => [dim, value]));
   ctx.profileIs = Object.fromEntries(
     Object.entries(DIMENSIONS)

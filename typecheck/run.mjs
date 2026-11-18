@@ -83,7 +83,8 @@ const RADIX_DEPS = { '@radix-ui/react-select': '^2.1.0', '@radix-ui/react-checkb
 // react17-legacy is outside the matrix and has nothing to check.
 const NEXT_RADIX = { ...RADIX_DEPS, 'server-only': '^0.0.1' };
 const REACT_18_2 = { react: '18.2.0', 'react-dom': '18.2.0' };
-const CONST_EXPORTS = { '.codegen/config.json': JSON.stringify({ exports: 'const' }) };
+const exportsConfig = (exports) => ({ '.codegen/config.json': JSON.stringify({ exports }) });
+const CONST_COMPONENTS = { component: 'const', 'client-component': 'const', 'form-field': 'const' };
 
 const STACKS = [
   { fixture: 'next-app-tw4', pack: 'next', deps: { ...reactTypes(19), ...NEXT_RADIX }, files: RADIX_PRIMITIVES },
@@ -95,10 +96,10 @@ const STACKS = [
   // Oldest supported: App Router went stable in Next 13.4; React 18.2 is the oldest React 18 still common.
   { name: 'next13.4-app-react18.2', fixture: 'next-app-tw4', pack: 'next', deps: { '@types/react': '18.2.79', '@types/react-dom': '18.2.25', ...NEXT_RADIX }, pin: { next: '13.4.19', ...REACT_18_2 }, files: RADIX_PRIMITIVES },
   { name: 'next13.0-pages-tw3.0', fixture: 'next-pages-tw3', pack: 'next', deps: { '@types/react': '18.2.79', '@types/react-dom': '18.2.25', ...NEXT_RADIX, tailwindcss: '3.0.24' }, pin: { next: '13.0.7', ...REACT_18_2 }, files: RADIX_PRIMITIVES },
-  // The repo setting for const components (`"exports": "const"`), on React 19 + Tailwind, React 18 + Tailwind and React 18 + styled-components.
-  { name: 'next-app-tw4-const', fixture: 'next-app-tw4', pack: 'next', deps: { ...reactTypes(19), ...NEXT_RADIX }, files: { ...RADIX_PRIMITIVES, ...CONST_EXPORTS } },
-  { name: 'next-pages-tw3-const', fixture: 'next-pages-tw3', pack: 'next', deps: { ...reactTypes(18), ...NEXT_RADIX }, files: { ...RADIX_PRIMITIVES, ...CONST_EXPORTS } },
-  { name: 'vite-react18-styled-const', fixture: 'vite-react18-styled', pack: 'react', deps: reactTypes(18), files: CONST_EXPORTS },
+  // Per-generator "exports" styles (const components, const or inline everything else), on React 19 + Tailwind, React 18 + Tailwind and React 18 + styled-components.
+  { name: 'next-app-tw4-const', fixture: 'next-app-tw4', pack: 'next', deps: { ...reactTypes(19), ...NEXT_RADIX }, files: { ...RADIX_PRIMITIVES, ...exportsConfig({ ...CONST_COMPONENTS, hook: 'inline', util: 'const', context: 'inline', route: 'const', 'server-action': 'inline' }) } },
+  { name: 'next-pages-tw3-const', fixture: 'next-pages-tw3', pack: 'next', deps: { ...reactTypes(18), ...NEXT_RADIX }, files: { ...RADIX_PRIMITIVES, ...exportsConfig({ ...CONST_COMPONENTS, hook: 'const', util: 'inline', context: 'const', route: 'const' }) } },
+  { name: 'vite-react18-styled-const', fixture: 'vite-react18-styled', pack: 'react', deps: reactTypes(18), files: exportsConfig({ component: 'const', hook: 'inline', util: 'const', context: 'inline', page: 'const' }) },
   { name: 'next15-app', fixture: 'next-app-tw4', pack: 'next', deps: { ...reactTypes(19), ...NEXT_RADIX }, pin: { next: '~15.5.0' }, files: RADIX_PRIMITIVES },
 ].map((s) => ({ name: s.fixture, ...s }));
 
@@ -184,13 +185,15 @@ function checkStack(stack) {
   const tsc = run(process.execPath, [path.join(dir, 'node_modules/typescript/bin/tsc'), '-p', 'tsconfig.typecheck.json', '--pretty', 'false'], dir);
   const typeErrors = attribute(parseTscErrors(tsc.stdout), filesByCall);
   const generated = [...new Set(filesByCall.flatMap((c) => c.files))].filter((f) => /\.tsx?$/.test(f));
-  // "exports": "const" stacks: every component file must be `const X = …` + `export { X }`, never `export function`.
-  if (stack.files?.['.codegen/config.json']?.includes('"const"')) {
-    const componentFiles = filesByCall.filter((c) => c.call.split(' ')[1] === 'component').flatMap((c) => c.files.filter((f) => /\.tsx$/.test(f) && !/\.(test|stories)\.tsx$/.test(f)));
-    if (!componentFiles.length) genErrors.push('exports const: no component files generated');
-    for (const f of componentFiles) {
+  // "exports" stacks: each generated source file must have its generator's style. const: no `export function`, one `export { }` (or `export default X;`); inline: `export const`.
+  const styles = JSON.parse(stack.files?.['.codegen/config.json'] ?? '{}').exports ?? {};
+  for (const [generator, style] of Object.entries(styles)) {
+    const files = filesByCall.filter((c) => c.call.split(' ')[1] === generator).flatMap((c) => c.files.filter((f) => /\.tsx?$/.test(f) && !/(\.(test|stories)\.tsx?|index\.ts)$/.test(f)));
+    if (!files.length) genErrors.push(`exports ${generator}: no files generated (drop it from this stack's config if the pack lacks it)`);
+    for (const f of files) {
       const src = fs.readFileSync(path.join(dir, f), 'utf8');
-      if (/^export (default )?function /m.test(src) || !/^export \{/m.test(src)) genErrors.push(`exports const: ${f} is not a const component with an export list`);
+      const ok = !/^export (default )?(async )?function /m.test(src) && (style === 'inline' ? /^export const /m.test(src) : /^export (\{|default \w+;$)/m.test(src));
+      if (!ok) genErrors.push(`exports ${generator} ${style}: ${f} does not have that style`);
     }
   }
   const eslint = run(process.execPath, [path.join(dir, 'node_modules/eslint/bin/eslint.js'), '--format', 'json', ...generated], dir);

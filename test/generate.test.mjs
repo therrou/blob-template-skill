@@ -394,7 +394,57 @@ test('.codegen/config.json is validated: unknown generators in "out", bad "expor
   const bad = (config) => run(makeRepo({ files: { '.codegen/config.json': JSON.stringify(config) } }), 'next', 'util', '--name', 'a').json.error;
   assert.match(bad({ out: { utils: 'src/utils' } }), /Unknown generator utils in "out"/);
   assert.match(bad({ out: { util: '' } }), /must map generator names to folders/);
-  assert.match(bad({ exports: 'default' }), /"exports" .* must be one of: function, const/);
+  assert.match(bad({ exports: 'default' }), /"exports" .* must be "function", "const" or an object/);
+  assert.match(bad({ exports: { utils: 'const' } }), /Unknown generator utils in "exports"/);
+  assert.match(bad({ exports: { util: 'arrow' } }), /"exports" for util must be one of: function, const, inline/);
+  assert.match(run(makeRepo({ dirs: ['app'], files: { '.codegen/config.json': JSON.stringify({ exports: { 'api-route': 'const' } }) } }), 'next', 'api-route', '--name', 'h').json.error, /"exports" for api-route must be one of: function\./);
+});
+
+test('"exports" as a map sets the style per generator; the string form covers components and form-field only', () => {
+  const repo = (exports, opts = {}) => {
+    const r = opts.form ? formRepo(['input'], { files: { '.codegen/config.json': JSON.stringify({ exports }) } }) : makeRepo({ deps: { next: '^15.1.0' }, dirs: ['app'], files: { '.codegen/config.json': JSON.stringify({ exports }) } });
+    return r;
+  };
+  const gen = (root, ...argv) => {
+    const { status, json } = run(root, ...argv);
+    assert.equal(status, 0, JSON.stringify(json));
+    return read(root, json.created[0]);
+  };
+
+  // String "const": components and form-field change, hooks don't.
+  const str = repo('const', { form: true });
+  const field = gen(str, 'react', 'form-field', '--name', 'EmailField', '--control', 'input', '--with-barrel');
+  assert.match(field, /^const EmailField = <TValues extends FieldValues = FieldValues>\(\{/m);
+  assert.match(field, /^type EmailFieldProps</m);
+  assert.match(field, /\n\};\n\nexport \{ EmailField \};\n$/);
+  assert.equal(read(str, 'src/components/email-field/index.ts'), "export { EmailField } from './email-field';\n");
+  assert.match(gen(str, 'react', 'hook', '--name', 'useA'), /^export function useA\(\)/m);
+
+  const map = repo({ hook: 'inline', util: 'const', context: 'const', page: 'inline', route: 'const', 'server-action': 'inline', 'form-field': 'function' });
+  assert.match(gen(map, 'next', 'hook', '--name', 'useTimer'), /^export const useTimer = \(\): UseTimerResult => \{[\s\S]*\n\};\n$/m);
+  const util = gen(map, 'next', 'util', '--name', 'slugify');
+  assert.match(util, /^const slugify = \(input: unknown\): unknown => \{[\s\S]*\n\};\n\nexport \{ slugify \};\n$/m);
+  const ctx = gen(map, 'next', 'context', '--name', 'Cart');
+  assert.match(ctx, /^const CartProvider = \(\{ children \}: \{ children: ReactNode \}\) => \{/m);
+  assert.match(ctx, /^const useCart = \(\): CartContextValue => \{/m);
+  assert.match(ctx, /\nexport \{ CartProvider, useCart \};\n$/);
+  assert.match(gen(map, 'react', 'page', '--name', 'About'), /^export const AboutPage = \(\) => \{[\s\S]*\n\};\n$/m);
+  assert.match(gen(map, 'next', 'server-action', '--name', 'save'), /^export const saveAction = async \(prevState: SaveState, formData: FormData\): Promise<SaveState> => \{/m);
+  const r = run(map, 'next', 'route', '--name', 'blog/[slug]', '--with-layout', '--with-loading', '--with-error');
+  assert.equal(r.status, 0, JSON.stringify(r.json));
+  const page = read(map, 'app/blog/[slug]/page.tsx');
+  assert.match(page, /^const BlogSlugPage = async \(\{ params \}: BlogSlugPageProps\) => \{/m);
+  assert.match(page, /\n\};\n\nexport default BlogSlugPage;\n$/);
+  assert.match(read(map, 'app/blog/[slug]/layout.tsx'), /^const BlogSlugLayout = \([\s\S]*\nexport default BlogSlugLayout;\n$/m);
+  assert.match(read(map, 'app/blog/[slug]/loading.tsx'), /^const Loading = \(\) => \{[\s\S]*\nexport default Loading;\n$/m);
+  assert.match(read(map, 'app/blog/[slug]/error.tsx'), /^const BlogSlugError = \([\s\S]*\nexport default BlogSlugError;\n$/m);
+  const plain = gen(map, 'next', 'route', '--name', 'about');
+  assert.match(plain, /^const AboutPage = async \(\) => \{[\s\S]*\nexport default AboutPage;\n$/m);
+  // Unlisted generators keep the default.
+  assert.match(gen(map, 'next', 'component', '--name', 'Box', '--element', 'div'), /^export function Box\(/m);
+
+  const pages = makeRepo({ deps: { next: '^15.1.0' }, dirs: ['pages'], files: { '.codegen/config.json': JSON.stringify({ exports: { route: 'const' } }) } });
+  assert.match(gen(pages, 'next', 'route', '--name', 'about'), /^const AboutPage = \(props: AboutPageProps\) => \{[\s\S]*\nexport default AboutPage;\n$/m);
 });
 
 test('"exports": "const" writes const components with a local props type and one export list', () => {
@@ -459,6 +509,31 @@ test('--detect prints the profile; every result carries it', () => {
   assert.deepEqual(detect.profile.app, { value: 'react-spa', source: 'detected' });
   assert.equal(run(root, 'react', 'util', '--name', 'x').json.profile.react.value, '19');
   assert.equal(run(root, 'react', 'util', '--name', 'x', '--profile', 'nope=1').json.ok, false);
+});
+
+test('--detect suggests "exports" and "out" only for clear conventions, and not for keys already configured', () => {
+  const files = {};
+  const many = (n, make) => Array.from({ length: n }, (_, i) => make(`n${i}`)).forEach(([f, src]) => (files[f] = src));
+  // Components: const + export list in their own folders under components/modules (hero/module-hero.tsx counts as its own folder).
+  many(5, (n) => [`src/components/modules/${n}/module-${n}.tsx`, `const X${n} = () => null;\n\nexport { X${n} };\n`]);
+  many(2, (n) => [`src/components/ui/f${n}/f${n}.tsx`, `export function F${n}() { return null; }\n`]);
+  // Hooks: inline 5 vs function 2.
+  many(5, (n) => [`src/hooks/use-${n}.ts`, `export const use${n} = () => 1;\n`]);
+  many(2, (n) => [`src/hooks/use-f${n}.ts`, `export function useF${n}() { return 1; }\n`]);
+  // Utils: inline 3 vs function 2 is not clear; constants don't count as inline functions.
+  many(3, (n) => [`src/utils/${n}.ts`, `export const ${n} = (a: number) => a;\nexport const LIMIT = 3;\n`]);
+  many(2, (n) => [`src/utils/f${n}.ts`, `export function f${n}() {}\n`]);
+  const root = makeRepo({ dirs: ['src'], files });
+  const { conventions } = run(root, '--detect').json;
+  assert.deepEqual(conventions.styles.hook, { inline: 5, function: 2 });
+  assert.deepEqual(conventions.suggest, {
+    exports: { component: 'const', 'client-component': 'const', 'form-field': 'const', hook: 'inline' },
+    out: { component: 'src/components/modules' },
+  });
+
+  fs.mkdirSync(path.join(root, '.codegen'));
+  fs.writeFileSync(path.join(root, '.codegen/config.json'), JSON.stringify({ exports: 'const', out: { component: 'src/components/modules' } }));
+  assert.deepEqual(run(root, '--detect').json.conventions.suggest, { exports: { hook: 'inline' } });
 });
 
 test('react 18 components forward refs; react 19 is unchanged', () => {

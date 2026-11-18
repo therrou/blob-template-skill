@@ -10,7 +10,8 @@ import { fileURLToPath } from 'node:url';
 import { CodegenError } from './lib/errors.mjs';
 import { formatFiles, relocateTodos } from './lib/format.mjs';
 import { GLOBAL_OPTIONS, checkWritable, listPacks, loadPack, plan, write } from './lib/generate.mjs';
-import { resolveProfile } from './lib/profile.mjs';
+import { conventionsFor } from './lib/conventions.mjs';
+import { readConfig, resolveProfile } from './lib/profile.mjs';
 
 const skillDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -57,7 +58,10 @@ async function main() {
   const { positional, options } = parseArgs(process.argv.slice(2));
   if (options.detect) {
     if (options.root === true || options.profile === true) throw new CodegenError('--root and --profile need a value.');
-    return print({ ok: true, profile: resolveProfile(path.resolve(options.root ?? process.cwd()), options.profile).dims });
+    const root = path.resolve(options.root ?? process.cwd());
+    const profile = resolveProfile(root, options.profile).dims;
+    const pack = loadPack(skillDir, profile.app.value.startsWith('next') ? 'next' : 'react');
+    return print({ ok: true, profile, conventions: conventionsFor(root, profile.app.value, pack, readConfig(root)) });
   }
   if (options.format) {
     // The agent's own edits: format them with the repo's Prettier, which may not be runnable directly.

@@ -12,11 +12,19 @@ type {{name.pascal}}PageProps = {
 };
 
 // TODO(codegen): add generateMetadata({ params }) if the title depends on params
+{{#if exportIs.function}}
 export default async function {{name.pascal}}Page({ params }: {{name.pascal}}PageProps) {
+{{else}}
+const {{name.pascal}}Page = async ({ params }: {{name.pascal}}PageProps) => {
+{{/if}}
   const { {{paramsList}} } = {{#if asyncParams}}await params{{else}}params{{/if}};
   {{paramsVoid}}
 {{else}}
+{{#if exportIs.function}}
 export default async function {{name.pascal}}Page() {
+{{else}}
+const {{name.pascal}}Page = async () => {
+{{/if}}
 {{/if}}
   // TODO(codegen): fetch data here on the server and pass plain props down; keep client components at the leaves
   return (
@@ -24,4 +32,8 @@ export default async function {{name.pascal}}Page() {
       {/* TODO(codegen): page content */}
     </main>
   );
-}
+}{{#unless exportIs.function}};{{/unless}}
+{{#unless exportIs.function}}
+
+export default {{name.pascal}}Page;
+{{/unless}}

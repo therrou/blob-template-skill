@@ -18,7 +18,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '{
 import { Checkbox } from '{{ui}}/checkbox';
 {{/if}}
 
-export type {{name.pascal}}Props<TValues extends FieldValues = FieldValues> = {
+{{#unless constExport}}export {{/unless}}type {{name.pascal}}Props<TValues extends FieldValues = FieldValues> = {
   name: FieldPath<TValues>;
   label: string;
   description?: string;
@@ -29,7 +29,11 @@ export type {{name.pascal}}Props<TValues extends FieldValues = FieldValues> = {
 };
 
 // Render inside the shadcn <Form {...form}>. Validation lives in the form's zod schema (zodResolver), not here.
+{{#if constExport}}
+const {{name.pascal}} = <TValues extends FieldValues = FieldValues>({ name, label, description{{#if controlIs.select}}, placeholder, options{{/if}} }: {{name.pascal}}Props<TValues>) => {
+{{else}}
 export function {{name.pascal}}<TValues extends FieldValues = FieldValues>({ name, label, description{{#if controlIs.select}}, placeholder, options{{/if}} }: {{name.pascal}}Props<TValues>) {
+{{/if}}
   const { control } = useFormContext();
   return (
     <FormField
@@ -84,4 +88,8 @@ export function {{name.pascal}}<TValues extends FieldValues = FieldValues>({ nam
       )}
     />
   );
-}
+}{{#if constExport}};{{/if}}
+{{#if constExport}}
+
+export { {{name.pascal}} };
+{{/if}}
