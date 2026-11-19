@@ -319,5 +319,65 @@
     "noGenerator": true,
     "noNewFiles": ".",
     "noModified": "."
+  },
+  {
+    "id": "tanstack-email-field",
+    "fixture": "next-tanstack-form",
+    "prompt": "Add an email field component for the newsletter signup form.",
+    "newFiles": [
+      "^components/([a-z-]+/)*[a-z-]*email[a-z-]*\\.tsx$"
+    ],
+    "contains": [
+      {
+        "file": "email[a-z-]*\\.tsx$",
+        "pattern": "\\bField\\b|TextField"
+      },
+      {
+        "file": "email[a-z-]*\\.tsx$",
+        "pattern": "react-hook-form|FormControl",
+        "absent": true
+      }
+    ],
+    "noNewFiles": "^components/ui/form\\.tsx$",
+    "noModified": "package\\.json",
+    "dryRun": [
+      "next",
+      "form-field",
+      "--name",
+      "EmailField",
+      "--control",
+      "input"
+    ],
+    "dryRunError": "forms tanstack-form"
+  },
+  {
+    "id": "custom-form-phone-field",
+    "fixture": "next-custom-form",
+    "prompt": "Add a phone number field for the contact form.",
+    "newFiles": [
+      "^components/([a-z-]+/)*[a-z-]*phone[a-z-]*\\.tsx$"
+    ],
+    "contains": [
+      {
+        "file": "phone[a-z-]*\\.tsx$",
+        "pattern": "\\bFormField\\b"
+      },
+      {
+        "file": "phone[a-z-]*\\.tsx$",
+        "pattern": "FormControl|FormItem",
+        "absent": true
+      }
+    ],
+    "noNewFiles": "^components/ui/form\\.tsx$",
+    "noModified": "package\\.json",
+    "dryRun": [
+      "next",
+      "form-field",
+      "--name",
+      "PhoneField",
+      "--control",
+      "input"
+    ],
+    "dryRunError": "forms custom"
   }
 ]

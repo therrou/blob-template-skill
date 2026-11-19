@@ -9,7 +9,7 @@ test('detects a Next 16 app router + React 19 + Tailwind 4 + Base UI repo', () =
   const root = makeRepo({ deps: { next: '^16.1.0', react: '^19.2.0', tailwindcss: '^4.1.0' }, dirs: ['src/app'], files: { 'components.json': JSON.stringify({ style: 'base-nova', aliases: { utils: '@/lib/utils' } }) } });
   const { dims } = detectProfile(root);
   assert.deepEqual(Object.fromEntries(Object.entries(dims).map(([k, v]) => [k, v.value])), {
-    app: 'next-app', next: '16', react: '19', styling: 'tailwind-4', primitives: 'base', cn: '@/lib/utils', zod: '4', table: '9', srcDir: 'true',
+    app: 'next-app', next: '16', react: '19', styling: 'tailwind-4', primitives: 'base', forms: 'none', cn: '@/lib/utils', zod: '4', table: '9', srcDir: 'true',
   });
   assert.equal(dims.zod.source, 'default');
 });
@@ -72,4 +72,15 @@ test('typos in overrides are errors that list the allowed values', () => {
   assert.throws(() => resolveProfile(root, 'react=17'), /profile react must be one of: 18, 19\. Got "17"/);
   const bad = makeRepo({ files: { '.codegen/config.json': '{"profil":{}}' } });
   assert.throws(() => resolveProfile(bad), /Unknown key "profil" in \.codegen\/config\.json/);
+});
+
+test('forms: shadcn form.tsx wins; else TanStack Form or Formik; else a ui/form(s) folder is custom', () => {
+  const forms = (opts) => detectProfile(makeRepo(opts)).dims.forms;
+  assert.equal(forms({ deps: { '@tanstack/react-form': '^1' }, files: { 'components/ui/form.tsx': '' } }).value, 'shadcn');
+  const tanstack = forms({ deps: { '@tanstack/react-form': '^1' }, dirs: ['src/components/ui/forms'] });
+  assert.equal(tanstack.value, 'tanstack-form');
+  assert.match(tanstack.hint, /TanStack Form in src\/components\/ui\/forms\//);
+  assert.equal(forms({ deps: { formik: '^2' } }).value, 'formik');
+  assert.equal(forms({ deps: { 'react-hook-form': '^7' }, dirs: ['components/ui/form'] }).value, 'custom');
+  assert.deepEqual(forms({ deps: { 'react-hook-form': '^7' } }), { value: 'none', source: 'detected' });
 });

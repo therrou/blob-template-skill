@@ -67,7 +67,7 @@
       ]
     },
     "form-field": {
-      "supports": { "react": ["18", "19"], "primitives": ["radix", "none"], "styling": ["tailwind-3", "tailwind-4", "plain"] },
+      "supports": { "react": ["18", "19"], "primitives": ["radix", "none"], "forms": ["shadcn", "none"], "styling": ["tailwind-3", "tailwind-4", "plain"] },
       "description": "react-hook-form field on the shadcn form primitives: label, control, description and error wired for a11y. Validation lives in the form's zod schema.",
       "out": "components",
       "requires": ["react-hook-form"],

@@ -109,7 +109,7 @@ function requiredPackages(gen, ctx) {
 
 function checkSupports(supports, profile, describe) {
   for (const [dim, allowed] of Object.entries(supports ?? {})) {
-    const { value, supported } = profile.dims[dim] ?? {};
+    const { value, supported, hint } = profile.dims[dim] ?? {};
     if (value === 'unknown') {
       throw new CodegenError(
         `${dim} could not be detected (unreadable version range and nothing installed). Set it in .codegen/config.json or pass --profile ${dim}=<value> (supported: ${describeAllowed(allowed)}).`,
@@ -120,7 +120,7 @@ function checkSupports(supports, profile, describe) {
         `${dim} ${value} is not supported (supported: ${DIMENSIONS[dim].values.join(', ')}). Set it in .codegen/config.json if detection is wrong.`,
       );
     }
-    if (!valueAllowed(allowed, value)) throw new CodegenError(`${describe(dim, value)} (supported: ${describeAllowed(allowed)}).`);
+    if (!valueAllowed(allowed, value)) throw new CodegenError(`${describe(dim, value)} (supported: ${describeAllowed(allowed)}).${hint ? ` ${hint}` : ''}`);
   }
 }
 

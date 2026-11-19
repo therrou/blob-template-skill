@@ -31,6 +31,8 @@ These are the defaults behind the templates. They apply to every React-based pac
 
 ## Forms
 
+This section is for shadcn Form repos. A repo with its own form system (`profile.forms` other than `shadcn` or `none`) follows its existing fields instead; keep their label, error and `aria-*` wiring.
+
 - react-hook-form + zod: the schema lives with the form (`zodResolver(schema)`), never inside fields.
 - Each field is a `form-field` component on the shadcn form primitives (`FormField`, `FormItem`, `FormLabel`, `FormControl`, `FormDescription`, `FormMessage`), which wire `id`, `aria-describedby` and `aria-invalid`. Don't hand-wire them.
 - Fields read `control` from `useFormContext()`, so render them inside `<Form {...form}>`. Pass the form values type for a typed `name`: `<EmailField<SignupValues> name="email" label="Email" />`.

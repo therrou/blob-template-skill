@@ -3,6 +3,14 @@
 Update a repo's copy by replacing `.agents/skills/codegen/` with the boilerplate version.
 Repo overrides live in `.codegen/templates/` and are never touched by an update.
 
+## 0.8.0 — 2026-11-19
+
+Repos with their own form system (their own `ui/form/` primitives on react-hook-form, or TanStack Form):
+- New profile value `forms`: `shadcn` (`components/ui/form.tsx`), `tanstack-form`, `formik`, `custom` (a `components/ui/form(s)/` folder without shadcn Form) or `none`.
+- `form-field` runs on `shadcn` and `none` only. Otherwise it refuses with no install command, and the error names the repo's form folder and says to write the field by hand following the existing fields there. SKILL.md and the react CONVENTIONS say the same. Before, such repos were told to install shadcn `form` (and `react-hook-form`).
+- Hook TODO (client hooks): `useSyncExternalStore`'s `getServerSnapshot` must return what the server can know, not a browser value (seen in a countdown hook).
+- Evals: two new fixtures and cases, `tanstack-email-field` and `custom-form-phone-field` (3/3 each). `--case` runs now get their own results folder, so parallel runs no longer overwrite each other.
+
 ## 0.7.1 — 2026-11-19
 
 - SKILL.md: the `--out` red flag no longer uses `components/ui` as its example, and a new red flag says that in shadcn repos `components/ui/` belongs to the CLI, so new components go next to it. The 0.7.0 evals put 2 of 48 new components there.

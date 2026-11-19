@@ -11,6 +11,7 @@ export const DIMENSIONS = {
   react: { values: ['18', '19'], newest: '19' },
   styling: { values: ['tailwind-3', 'tailwind-4', 'styled-components', 'emotion', 'plain'] },
   primitives: { values: ['radix', 'base', 'none'] },
+  forms: { values: ['shadcn', 'tanstack-form', 'formik', 'custom', 'none'] },
   cn: { values: null },
   zod: { values: ['3', '4'], newest: '4' },
   table: { values: ['8', '9'], newest: '9' },
@@ -65,6 +66,22 @@ function detectPrimitives(root) {
   return { value: 'radix', source: 'detected' };
 }
 
+const FORM_LIBS = { 'tanstack-form': ['@tanstack/react-form', 'TanStack Form'], formik: ['formik', 'Formik'] };
+
+// What the repo's form fields are built on. form-field writes shadcn Form (react-hook-form) fields only;
+// for anything else `hint` tells the agent where the repo's own fields live.
+function detectForms(root, deps) {
+  const uiDir = resolveAliasDir(root, detectShadcnAliases(root).ui ?? '@/components/ui');
+  if (['tsx', 'jsx'].some((ext) => fs.existsSync(path.join(root, uiDir, `form.${ext}`)))) return { value: 'shadcn', source: 'detected' };
+  const folder = ['form', 'forms'].map((d) => `${uiDir}/${d}`).find((d) => isDir(root, d));
+  const lib = Object.entries(FORM_LIBS).find(([, [pkg]]) => deps[pkg] !== undefined);
+  const value = lib?.[0] ?? (folder ? 'custom' : 'none');
+  if (value === 'none') return { value, source: 'detected' };
+  const what = lib ? lib[1][1] : 'its own form components';
+  const where = folder ? ` in ${folder}/` : '';
+  return { value, source: 'detected', hint: `This repo builds form fields with ${what}${where}: write the field by hand following the existing fields${where ? ' there' : ''}, not shadcn Form. Don't install shadcn form or another form library.` };
+}
+
 const CN_IMPORT = /import\s*\{[^}]*\bcn\b[^}]*\}\s*from\s*['"]([^'"]+)['"]/;
 
 // The project's own ui components show how cn is imported today (shadcn moved it to the `cn` package in 2026).
@@ -111,6 +128,7 @@ export function detectProfile(root) {
       react: versionDim(root, 'react', { min: 18, max: 19, newest: '19' }),
       styling: detectStyling(root, deps),
       primitives: detectPrimitives(root),
+      forms: detectForms(root, deps),
       cn: { value: detectCnImport(root), source: 'detected' },
       zod: versionDim(root, 'zod', { min: 3, max: 4, newest: '4' }),
       table: versionDim(root, '@tanstack/react-table', { min: 8, max: 9, newest: '9' }),

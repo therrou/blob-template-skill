@@ -132,7 +132,7 @@ if (!cases.length) {
 }
 
 const version = fs.readFileSync(path.join(skillDir, 'VERSION'), 'utf8').trim();
-const stamp = `${new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19)}-v${version}-${model ?? 'default'}`;
+const stamp = `${new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19)}-v${version}-${model ?? 'default'}${only ? `-${only}` : ''}`;
 const outDir = path.join(evalsDir, 'results', stamp);
 fs.mkdirSync(outDir, { recursive: true });
 

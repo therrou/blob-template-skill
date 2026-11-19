@@ -11,7 +11,7 @@ Paths below are relative to the repo root: `SKILL=.agents/skills/codegen`.
 
 ## Workflow
 
-1. **Detect the stack, then pick the pack.** Run `node $SKILL/scripts/generate.mjs --detect` and read `profile`: app type, Next and React versions, styling (Tailwind 3/4, styled-components, Emotion/MUI, plain), shadcn primitives (Radix/Base UI), `cn` import, Zod and TanStack Table versions.
+1. **Detect the stack, then pick the pack.** Run `node $SKILL/scripts/generate.mjs --detect` and read `profile`: app type, Next and React versions, styling (Tailwind 3/4, styled-components, Emotion/MUI, plain), shadcn primitives (Radix/Base UI), form system, `cn` import, Zod and TanStack Table versions.
    - Use `next` when `profile.app` is `next-app` or `next-pages`, otherwise `react`. For any other stack there is no pack yet: write the code by hand following the closest `CONVENTIONS.md`.
    - If a value is wrong (e.g. a migration in progress), set it in `.codegen/config.json` (`{ "profile": { "styling": "emotion" } }`) and tell the user, or pass `--profile key=value` for one run.
    - Repo conventions also live in `.codegen/config.json`. `"out": { "util": "src/utils" }` sets a generator's folder. `"exports"` sets the export style: `"const"` writes components and form fields as `const X = …` with a local props type and one `export { X }`. A map sets it per generator: `{ "component": "const", "hook": "inline", "route": "const" }`, where `inline` is `export const x = …` and `const` on a route is `const X = …; export default X`.
@@ -22,7 +22,7 @@ Paths below are relative to the repo root: `SKILL=.agents/skills/codegen`.
    - Next: use `component` (a Server Component) by default. Use `client-component` only for state, effects, event handlers or browser APIs.
    - Components need `--element`: the most meaningful semantic root (`button` for actions, `a` for navigation, `nav`/`section`/`article`/`aside`/`header`/`footer` for regions, `ul`/`ol` for lists, `h1`–`h6` for headings). Use `div` only when nothing else fits; never put click handlers on it.
    - Add `--variants` when the component has visual variants or sizes (cva), and `--as-child` when callers need to render it as their own element (e.g. a link styled as a button).
-   - Form inputs: use `form-field --control input|textarea|select|checkbox`, not `component`.
+   - Form inputs: use `form-field --control input|textarea|select|checkbox`, not `component`. It writes shadcn Form fields only. When `profile.forms` is `tanstack-form`, `formik` or `custom`, the repo has its own form system: the generator refuses and names where the existing fields live. Write the field by hand following those files, then verify as in step 7.
    - `cn()` is detected automatically; pass `--cn <import path>` only to override.
    - Add `--with-test` or `--with-story` only when the user asks or the repo requires them.
    - Components and form fields get no `index.ts` by default. Add `--with-barrel` only when the existing component folders have their own `index.ts`.
@@ -32,7 +32,7 @@ Paths below are relative to the repo root: `SKILL=.agents/skills/codegen`.
    - The output lists `created`, `modified` (existing files the generator edited, such as a barrel) and `skipped`.
    - When the repo has Prettier installed, the written files are formatted with it; `format` in the output says so. `format.ok: false` means Prettier failed on them: the files are written; fix the cause and format them in step 7.
    - An error from a `modify` or `append` step means the target file isn't in the shape the generator expects. Tell the user; don't hand-edit around it.
-   - An error saying something "is not supported" means the stack or option is outside the support matrix. Tell the user; don't hand-write around it.
+   - An error saying something "is not supported" means the stack or option is outside the support matrix. Tell the user; don't hand-write around it, unless the error itself says to write the file by hand (a repo's own form system).
    - Output of `ok: false` with `conflicts` means the files already exist. Reuse them or choose another name. Never delete files in order to regenerate them.
    - Output of `ok: false` with `missing` / `missingUi` means a package or shadcn primitive is missing. Show the user the `install` command and ask before running it, then rerun the generator.
 6. **Fill in** every item in the output's `todo` list, and remove each `TODO(codegen)` marker.

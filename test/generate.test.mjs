@@ -601,6 +601,10 @@ test('css-in-js refuses --as-child; form-field refuses non-radix or non-tailwind
   const sc = makeRepo({ deps: { react: '^19', 'styled-components': '^6' } });
   assert.match(run(sc, 'react', 'component', '--name', 'A', '--element', 'a', '--as-child').json.error, /--as-child is not supported with styling styled-components/);
   assert.match(run(sc, 'react', 'form-field', '--name', 'Email', '--control', 'input').json.error, /does not support/);
+  const tanstack = makeRepo({ deps: { react: '^19', tailwindcss: '^4', '@tanstack/react-form': '^1' }, dirs: ['components/ui/forms'] });
+  const { error, install } = run(tanstack, 'react', 'form-field', '--name', 'Email', '--control', 'input').json;
+  assert.match(error, /does not support forms tanstack-form .*write the field by hand following the existing fields there/);
+  assert.equal(install, undefined);
 });
 
 test('tailwind + styled-components repo uses tailwind, and the flag switches', () => {
