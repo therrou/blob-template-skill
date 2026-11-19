@@ -12,7 +12,7 @@ import {
   resolveAliasDir,
   resolveOut,
 } from './detect.mjs';
-import { COMPONENT_GENERATORS, EXPORT_STYLES } from './conventions.mjs';
+import { COMPONENT_GENERATORS, EXPORT_STYLES, FILE_LAYOUTS } from './conventions.mjs';
 import { describeAllowed, ensureInside, matches, runActions, valueAllowed } from './actions.mjs';
 import { installCommand, missingDependencies } from './deps.mjs';
 import { elementVars } from './elements.mjs';
@@ -176,7 +176,7 @@ async function planWithProfile({ skillDir, root, pack, generator, options, manif
   const config = readConfig(root);
   const ctx = { ...manifest.vars, ...gen.vars };
   const generators = new Set(listPacks(skillDir).flatMap((p) => Object.keys(loadPack(skillDir, p).generators)));
-  for (const key of ['out', 'exports']) {
+  for (const key of ['out', 'exports', 'files']) {
     const unknown = Object.keys(typeof config[key] === 'object' ? config[key] : {}).filter((g) => !generators.has(g));
     if (unknown.length) throw new CodegenError(`Unknown generator ${unknown.join(', ')} in "${key}" of .codegen/config.json. Generators: ${[...generators].join(', ')}.`);
   }
@@ -184,6 +184,9 @@ async function planWithProfile({ skillDir, root, pack, generator, options, manif
   const exportStyle = exportsMap[generator] ?? 'function';
   const allowedStyles = EXPORT_STYLES[generator] ?? ['function'];
   if (!allowedStyles.includes(exportStyle)) throw new CodegenError(`"exports" for ${generator} must be one of: ${allowedStyles.join(', ')}. Got "${exportStyle}".`);
+  const layout = config.files?.[generator] ?? 'folder';
+  if (config.files?.[generator] !== undefined && !COMPONENT_GENERATORS.includes(generator)) throw new CodegenError(`"files" in .codegen/config.json applies to ${COMPONENT_GENERATORS.join(', ')} only, not ${generator}.`);
+  if (!FILE_LAYOUTS.includes(layout)) throw new CodegenError(`"files" for ${generator} must be one of: ${FILE_LAYOUTS.join(', ')}. Got "${layout}".`);
   ctx.exportIs = Object.fromEntries(['function', 'const', 'inline'].map((s) => [s, s === exportStyle]));
   ctx.constExport = ctx.exportIs.const;
   ctx.profile = Object.fromEntries(Object.entries(profile.dims).map(([dim, { value }]) => [dim, value]));
@@ -220,6 +223,10 @@ async function planWithProfile({ skillDir, root, pack, generator, options, manif
   } else {
     ctx.name = parseName(options.name, gen.strip);
   }
+  // Where the component's files go: base = file name without extension, dir = '' or its own folder with a trailing slash.
+  const base = layout.startsWith('pascal') ? ctx.name.pascal : ctx.name.kebab;
+  ctx.file = { base, folder: base, dir: layout.endsWith('folder') ? `${base}/` : '' };
+  if (ctx.withBarrel && !ctx.file.dir) throw new CodegenError(`--with-barrel needs a folder per component, but "files" for ${generator} is "${layout}".`);
 
   if ('cn' in (gen.options ?? {}) && !ctx.cn) ctx.cn = ctx.profile.cn === 'none' ? '' : ctx.profile.cn;
   ctx.ui = detectShadcnAliases(root).ui ?? '@/components/ui';

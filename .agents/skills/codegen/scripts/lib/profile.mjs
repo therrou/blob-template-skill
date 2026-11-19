@@ -152,8 +152,8 @@ export function detectProfile(root) {
 }
 
 const CONFIG_FILE = path.join('.codegen', 'config.json');
-const CONFIG_KEYS = ['profile', 'out', 'exports'];
-// { profile: { dim: value }, out: { generator: folder }, exports: 'function' | 'const' | { generator: style } }
+const CONFIG_KEYS = ['profile', 'out', 'exports', 'files'];
+// { profile: { dim: value }, out: { generator: folder }, exports: 'function' | 'const' | { generator: style }, files: { generator: layout } }
 export function readConfig(root) {
   const file = path.join(root, CONFIG_FILE);
   if (!fs.existsSync(file)) return {};
@@ -166,13 +166,16 @@ export function readConfig(root) {
   for (const key of Object.keys(config ?? {})) {
     if (!CONFIG_KEYS.includes(key)) throw new CodegenError(`Unknown key "${key}" in .codegen/config.json. Allowed: ${CONFIG_KEYS.join(', ')}.`);
   }
-  const { out, exports } = config ?? {};
+  const { out, exports, files } = config ?? {};
   if (out !== undefined && (typeof out !== 'object' || out === null || Array.isArray(out) || !Object.values(out).every((v) => typeof v === 'string' && v))) {
     throw new CodegenError('"out" in .codegen/config.json must map generator names to folders, e.g. { "util": "src/utils" }.');
   }
   const isMap = typeof exports === 'object' && exports !== null && !Array.isArray(exports) && Object.values(exports).every((v) => typeof v === 'string');
   if (exports !== undefined && !['function', 'const'].includes(exports) && !isMap) {
     throw new CodegenError(`"exports" in .codegen/config.json must be "function", "const" or an object of generator styles, e.g. { "hook": "inline" }. Got ${JSON.stringify(exports)}.`);
+  }
+  if (files !== undefined && (typeof files !== 'object' || files === null || Array.isArray(files) || !Object.values(files).every((v) => typeof v === 'string'))) {
+    throw new CodegenError('"files" in .codegen/config.json must map generator names to a file layout, e.g. { "component": "pascal" }.');
   }
   return config ?? {};
 }

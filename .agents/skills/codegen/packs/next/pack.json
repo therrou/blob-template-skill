@@ -16,11 +16,11 @@
         "with-story": { "type": "boolean", "description": "Add a Storybook CSF3 story (requires .storybook/)." }
       },
       "files": [
-        { "template": "@react/component/component.tsx.tpl", "path": "{{name.kebab}}/{{name.kebab}}.tsx", "when": { "styling": ["tailwind-3", "tailwind-4", "plain"] } },
-        { "template": "@react/component/component.styled.tsx.tpl", "path": "{{name.kebab}}/{{name.kebab}}.tsx", "when": { "styling": ["styled-components", "emotion"] } },
-        { "template": "@react/component/index.ts.tpl", "path": "{{name.kebab}}/index.ts", "when": "withBarrel" },
-        { "template": "@react/component/component.test.tsx.tpl", "path": "{{name.kebab}}/{{name.kebab}}.test.tsx", "when": "withTest" },
-        { "template": "@react/component/component.stories.tsx.tpl", "path": "{{name.kebab}}/{{name.kebab}}.stories.tsx", "when": "withStory" }
+        { "template": "@react/component/component.tsx.tpl", "path": "{{file.dir}}{{file.base}}.tsx", "when": { "styling": ["tailwind-3", "tailwind-4", "plain"] } },
+        { "template": "@react/component/component.styled.tsx.tpl", "path": "{{file.dir}}{{file.base}}.tsx", "when": { "styling": ["styled-components", "emotion"] } },
+        { "template": "@react/component/index.ts.tpl", "path": "{{file.dir}}index.ts", "when": "withBarrel" },
+        { "template": "@react/component/component.test.tsx.tpl", "path": "{{file.dir}}{{file.base}}.test.tsx", "when": "withTest" },
+        { "template": "@react/component/component.stories.tsx.tpl", "path": "{{file.dir}}{{file.base}}.stories.tsx", "when": "withStory" }
       ],
       "actions": [{ "type": "append", "path": "index.ts", "template": "@react/barrel/export.ts.tpl", "skipIfMissing": true }]
     },
@@ -39,11 +39,11 @@
         "with-story": { "type": "boolean", "description": "Add a Storybook CSF3 story (requires .storybook/)." }
       },
       "files": [
-        { "template": "@react/component/component.tsx.tpl", "path": "{{name.kebab}}/{{name.kebab}}.tsx", "when": { "styling": ["tailwind-3", "tailwind-4", "plain"] } },
-        { "template": "@react/component/component.styled.tsx.tpl", "path": "{{name.kebab}}/{{name.kebab}}.tsx", "when": { "styling": ["styled-components", "emotion"] } },
-        { "template": "@react/component/index.ts.tpl", "path": "{{name.kebab}}/index.ts", "when": "withBarrel" },
-        { "template": "@react/component/component.test.tsx.tpl", "path": "{{name.kebab}}/{{name.kebab}}.test.tsx", "when": "withTest" },
-        { "template": "@react/component/component.stories.tsx.tpl", "path": "{{name.kebab}}/{{name.kebab}}.stories.tsx", "when": "withStory" }
+        { "template": "@react/component/component.tsx.tpl", "path": "{{file.dir}}{{file.base}}.tsx", "when": { "styling": ["tailwind-3", "tailwind-4", "plain"] } },
+        { "template": "@react/component/component.styled.tsx.tpl", "path": "{{file.dir}}{{file.base}}.tsx", "when": { "styling": ["styled-components", "emotion"] } },
+        { "template": "@react/component/index.ts.tpl", "path": "{{file.dir}}index.ts", "when": "withBarrel" },
+        { "template": "@react/component/component.test.tsx.tpl", "path": "{{file.dir}}{{file.base}}.test.tsx", "when": "withTest" },
+        { "template": "@react/component/component.stories.tsx.tpl", "path": "{{file.dir}}{{file.base}}.stories.tsx", "when": "withStory" }
       ],
       "actions": [{ "type": "append", "path": "index.ts", "template": "@react/barrel/export.ts.tpl", "skipIfMissing": true }]
     },
@@ -133,9 +133,9 @@
         "with-barrel": { "type": "boolean", "description": "Add an index.ts that re-exports the component. Only when the repo's component folders have one." }
       },
       "files": [
-        { "template": "@react/form-field/form-field.tsx.tpl", "path": "{{name.kebab}}/{{name.kebab}}.tsx" },
-        { "template": "@react/form-field/index.ts.tpl", "path": "{{name.kebab}}/index.ts", "when": "withBarrel" },
-        { "template": "@react/form-field/form-field.test.tsx.tpl", "path": "{{name.kebab}}/{{name.kebab}}.test.tsx", "when": "withTest" }
+        { "template": "@react/form-field/form-field.tsx.tpl", "path": "{{file.dir}}{{file.base}}.tsx" },
+        { "template": "@react/form-field/index.ts.tpl", "path": "{{file.dir}}index.ts", "when": "withBarrel" },
+        { "template": "@react/form-field/form-field.test.tsx.tpl", "path": "{{file.dir}}{{file.base}}.test.tsx", "when": "withTest" }
       ],
       "actions": [{ "type": "append", "path": "index.ts", "template": "@react/barrel/export.ts.tpl", "skipIfMissing": true }]
     }

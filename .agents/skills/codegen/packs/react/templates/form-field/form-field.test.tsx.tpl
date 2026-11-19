@@ -7,7 +7,7 @@ import { useForm } from 'react-hook-form';
 
 import { Form } from '{{ui}}/form';
 
-import { {{name.pascal}} } from './{{name.kebab}}';
+import { {{name.pascal}} } from './{{file.base}}';
 
 function Harness({ children }: { children: ReactNode }) {
   const form = useForm({ defaultValues: { field: {{#if controlIs.checkbox}}false{{else}}''{{/if}} } });

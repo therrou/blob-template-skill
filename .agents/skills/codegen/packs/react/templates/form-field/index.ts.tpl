@@ -1,4 +1,4 @@
-export { {{name.pascal}} } from './{{name.kebab}}';
+export { {{name.pascal}} } from './{{file.base}}';
 {{#unless constExport}}
-export type { {{name.pascal}}Props } from './{{name.kebab}}';
+export type { {{name.pascal}}Props } from './{{file.base}}';
 {{/unless}}

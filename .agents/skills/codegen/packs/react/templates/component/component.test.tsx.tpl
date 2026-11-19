@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 {{/if}}
 import { render, screen } from '@testing-library/react';
 
-import { {{name.pascal}} } from './{{name.kebab}}';
+import { {{name.pascal}} } from './{{file.base}}';
 
 describe('{{name.pascal}}', () => {
   it('renders its children', () => {

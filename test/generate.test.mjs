@@ -400,6 +400,31 @@ test('.codegen/config.json is validated: unknown generators in "out", bad "expor
   assert.match(run(makeRepo({ dirs: ['app'], files: { '.codegen/config.json': JSON.stringify({ exports: { 'api-route': 'const' } }) } }), 'next', 'api-route', '--name', 'h').json.error, /"exports" for api-route must be one of: function\./);
 });
 
+test('"files" sets the component file layout; tests, stories and the parent barrel import the right file', () => {
+  const files = { component: 'pascal', 'client-component': 'pascal-folder', 'form-field': 'flat' };
+  const root = formRepo(['input'], { deps: { next: '^16', react: '^19', vitest: '^2' }, files: { '.codegen/config.json': JSON.stringify({ files }), 'src/components/index.ts': '' } });
+  fs.mkdirSync(path.join(root, 'src/app'));
+  fs.mkdirSync(path.join(root, '.storybook'));
+  const created = (...argv) => {
+    const { status, json } = run(root, ...argv);
+    assert.equal(status, 0, JSON.stringify(json));
+    return json.created;
+  };
+  assert.deepEqual(created('next', 'component', '--name', 'ProductCard', '--element', 'article', '--with-test', '--with-story'), ['src/components/ProductCard.tsx', 'src/components/ProductCard.test.tsx', 'src/components/ProductCard.stories.tsx']);
+  assert.match(read(root, 'src/components/ProductCard.test.tsx'), /from '\.\/ProductCard'/);
+  assert.match(read(root, 'src/components/ProductCard.stories.tsx'), /from '\.\/ProductCard'/);
+  assert.deepEqual(created('next', 'client-component', '--name', 'Toggle', '--element', 'button', '--with-barrel'), ['src/components/Toggle/Toggle.tsx', 'src/components/Toggle/index.ts']);
+  assert.match(read(root, 'src/components/Toggle/index.ts'), /from '\.\/Toggle'/);
+  assert.deepEqual(created('next', 'form-field', '--name', 'EmailField', '--control', 'input'), ['src/components/email-field.tsx']);
+  assert.equal(read(root, 'src/components/index.ts'), "export * from './ProductCard';\nexport * from './Toggle';\nexport * from './email-field';\n");
+
+  assert.match(run(root, 'next', 'component', '--name', 'A', '--element', 'div', '--with-barrel').json.error, /--with-barrel needs a folder per component, but "files" for component is "pascal"/);
+  const bad = (config) => run(makeRepo({ files: { '.codegen/config.json': JSON.stringify(config) } }), 'next', 'util', '--name', 'a').json.error;
+  assert.match(bad({ files: { util: 'flat' } }), /"files" in .codegen\/config.json applies to component, client-component, form-field only, not util/);
+  assert.match(bad({ files: 'pascal' }), /"files" in .codegen\/config.json must map generator names/);
+  assert.match(bad({ files: { utils: 'flat' } }), /Unknown generator utils in "files"/);
+});
+
 test('"exports" as a map sets the style per generator; the string form covers components and form-field only', () => {
   const repo = (exports, opts = {}) => {
     const r = opts.form ? formRepo(['input'], { files: { '.codegen/config.json': JSON.stringify({ exports }) } }) : makeRepo({ deps: { next: '^15.1.0' }, dirs: ['app'], files: { '.codegen/config.json': JSON.stringify({ exports }) } });
@@ -522,7 +547,7 @@ test('shadcn copied in without components.json (src/app/components/ui): primitiv
   const root = makeRepo({ deps: { next: '^16', react: '^19', tailwindcss: '^4', 'react-hook-form': '^7' }, dirs: ['src/app'], files });
   const { profile, conventions } = run(root, '--detect').json;
   assert.deepEqual([profile.primitives.value, profile.forms.value, profile.cn.value], ['radix', 'shadcn', '@/app/components/ui/utils']);
-  assert.deepEqual(conventions.suggest, { out: { component: 'src/app/components' } });
+  assert.deepEqual(conventions.suggest, { out: { component: 'src/app/components' }, files: { component: 'pascal', 'client-component': 'pascal', 'form-field': 'pascal' } });
   const gen = run(root, 'next', 'form-field', '--name', 'Email', '--control', 'input').json;
   assert.equal(gen.ok, true, gen.error);
   const src = fs.readFileSync(path.join(root, gen.created.find((f) => f.endsWith('email.tsx'))), 'utf8');

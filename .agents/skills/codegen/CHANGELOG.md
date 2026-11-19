@@ -3,6 +3,14 @@
 Update a repo's copy by replacing `.agents/skills/codegen/` with the boilerplate version.
 Repo overrides live in `.codegen/templates/` and are never touched by an update.
 
+## 0.9.0 — 2026-11-19
+
+Component file names (a pilot repo names components `ProductCard.tsx`, flat; the generator always wrote `product-card/product-card.tsx`):
+- `"files"` in `.codegen/config.json` sets the layout per generator for component, client-component and form-field: `folder` (default), `flat` (`my-card.tsx`), `pascal` (`MyCard.tsx`) or `pascal-folder` (`MyCard/MyCard.tsx`). Tests, stories, the component's `index.ts` and the parent barrel import the right file. `--with-barrel` with a flat layout is refused.
+- `--detect` counts component layouts (`conventions.layouts`, excluding the shadcn ui folder) and suggests `files` when one is clear. Repos with a mix of layouts, or with the default one, get no suggestion.
+- `npm run typecheck`: two const stacks also set layouts (`flat`, `pascal`, `pascal-folder`) and check every generated file's name.
+- Template variable `file` (`base`, `dir`, `folder`) for repo overrides that build paths or imports.
+
 ## 0.8.1 — 2026-11-19
 
 shadcn copied into a repo without `components.json`, as v0 and Figma Make exports do (e.g. primitives in `src/app/components/ui/`, `cn` in `./utils`):

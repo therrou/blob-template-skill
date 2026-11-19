@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '{{storybookImport}}';
 
-import { {{name.pascal}} } from './{{name.kebab}}';
+import { {{name.pascal}} } from './{{file.base}}';
 
 const meta = {
   component: {{name.pascal}},

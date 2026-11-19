@@ -83,7 +83,7 @@ const RADIX_DEPS = { '@radix-ui/react-select': '^2.1.0', '@radix-ui/react-checkb
 // react17-legacy is outside the matrix and has nothing to check.
 const NEXT_RADIX = { ...RADIX_DEPS, 'server-only': '^0.0.1' };
 const REACT_18_2 = { react: '18.2.0', 'react-dom': '18.2.0' };
-const exportsConfig = (exports) => ({ '.codegen/config.json': JSON.stringify({ exports }) });
+const exportsConfig = (exports, files) => ({ '.codegen/config.json': JSON.stringify({ exports, ...(files && { files }) }) });
 const CONST_COMPONENTS = { component: 'const', 'client-component': 'const', 'form-field': 'const' };
 
 const STACKS = [
@@ -97,9 +97,9 @@ const STACKS = [
   { name: 'next13.4-app-react18.2', fixture: 'next-app-tw4', pack: 'next', deps: { '@types/react': '18.2.79', '@types/react-dom': '18.2.25', ...NEXT_RADIX }, pin: { next: '13.4.19', ...REACT_18_2 }, files: RADIX_PRIMITIVES },
   { name: 'next13.0-pages-tw3.0', fixture: 'next-pages-tw3', pack: 'next', deps: { '@types/react': '18.2.79', '@types/react-dom': '18.2.25', ...NEXT_RADIX, tailwindcss: '3.0.24' }, pin: { next: '13.0.7', ...REACT_18_2 }, files: RADIX_PRIMITIVES },
   // Per-generator "exports" styles (const components, const or inline everything else), on React 19 + Tailwind, React 18 + Tailwind and React 18 + styled-components.
-  { name: 'next-app-tw4-const', fixture: 'next-app-tw4', pack: 'next', deps: { ...reactTypes(19), ...NEXT_RADIX }, files: { ...RADIX_PRIMITIVES, ...exportsConfig({ ...CONST_COMPONENTS, hook: 'inline', util: 'const', context: 'inline', route: 'const', 'server-action': 'inline' }) } },
+  { name: 'next-app-tw4-const', fixture: 'next-app-tw4', pack: 'next', deps: { ...reactTypes(19), ...NEXT_RADIX }, files: { ...RADIX_PRIMITIVES, ...exportsConfig({ ...CONST_COMPONENTS, hook: 'inline', util: 'const', context: 'inline', route: 'const', 'server-action': 'inline' }, { component: 'flat', 'client-component': 'pascal-folder', 'form-field': 'pascal' }) } },
   { name: 'next-pages-tw3-const', fixture: 'next-pages-tw3', pack: 'next', deps: { ...reactTypes(18), ...NEXT_RADIX }, files: { ...RADIX_PRIMITIVES, ...exportsConfig({ ...CONST_COMPONENTS, hook: 'const', util: 'inline', context: 'const', route: 'const' }) } },
-  { name: 'vite-react18-styled-const', fixture: 'vite-react18-styled', pack: 'react', deps: reactTypes(18), files: exportsConfig({ component: 'const', hook: 'inline', util: 'const', context: 'inline', page: 'const' }) },
+  { name: 'vite-react18-styled-const', fixture: 'vite-react18-styled', pack: 'react', deps: reactTypes(18), files: exportsConfig({ component: 'const', hook: 'inline', util: 'const', context: 'inline', page: 'const' }, { component: 'pascal' }) },
   { name: 'next15-app', fixture: 'next-app-tw4', pack: 'next', deps: { ...reactTypes(19), ...NEXT_RADIX }, pin: { next: '~15.5.0' }, files: RADIX_PRIMITIVES },
 ].map((s) => ({ name: s.fixture, ...s }));
 
@@ -174,7 +174,11 @@ function checkStack(stack) {
   const filesByCall = [];
   const skipped = new Map();
   const genErrors = [];
-  for (const call of matrix(stack.pack, list.packs[stack.pack].generators)) {
+  const config = JSON.parse(stack.files?.['.codegen/config.json'] ?? '{}');
+  const layouts = config.files ?? {};
+  for (const fullCall of matrix(stack.pack, list.packs[stack.pack].generators)) {
+    // A flat layout has no folder for a barrel.
+    const call = layouts[fullCall[1]] && !layouts[fullCall[1]].endsWith('folder') ? fullCall.filter((a) => a !== '--with-barrel') : fullCall;
     const out = JSON.parse(run(process.execPath, [generate, ...call, '--root', dir], dir).stdout);
     const label = call.join(' ');
     if (out.ok) filesByCall.push({ call: label, files: [...out.created, ...out.modified] });
@@ -186,7 +190,18 @@ function checkStack(stack) {
   const typeErrors = attribute(parseTscErrors(tsc.stdout), filesByCall);
   const generated = [...new Set(filesByCall.flatMap((c) => c.files))].filter((f) => /\.tsx?$/.test(f));
   // "exports" stacks: each generated source file must have its generator's style. const: no `export function`, one `export { }` (or `export default X;`); inline: `export const`.
-  const styles = JSON.parse(stack.files?.['.codegen/config.json'] ?? '{}').exports ?? {};
+  const styles = config.exports ?? {};
+  // "files" stacks: every generated component file is named by its layout (pascal: MyCard.tsx, flat: my-card.tsx, *-folder: in a folder of the same name).
+  for (const [generator, layout] of Object.entries(layouts)) {
+    const files = filesByCall.filter((c) => c.call.split(' ')[1] === generator).flatMap((c) => c.files.filter((f) => /\.tsx$/.test(f)));
+    if (!files.length) genErrors.push(`files ${generator}: no files generated`);
+    for (const f of files) {
+      const own = path.posix.basename(f).replace(/\.(test|stories)?\.?tsx$/, '');
+      const dir = path.posix.basename(path.posix.dirname(f));
+      const ok = (layout.startsWith('pascal') ? /^[A-Z]/.test(own) : /^[a-z]/.test(own)) && (layout.endsWith('folder') === (dir === own));
+      if (!ok) genErrors.push(`files ${generator} ${layout}: ${f} does not have that layout`);
+    }
+  }
   for (const [generator, style] of Object.entries(styles)) {
     const files = filesByCall.filter((c) => c.call.split(' ')[1] === generator).flatMap((c) => c.files.filter((f) => /\.tsx?$/.test(f) && !/(\.(test|stories)\.tsx?|index\.ts)$/.test(f)));
     if (!files.length) genErrors.push(`exports ${generator}: no files generated (drop it from this stack's config if the pack lacks it)`);

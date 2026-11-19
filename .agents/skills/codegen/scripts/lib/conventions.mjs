@@ -9,8 +9,10 @@ import { detectShadcnAliases, resolveAliasDir, resolveOut } from './detect.mjs';
 // Route files are default exports, so their const style is `const X = …; export default X`. Route handlers stay functions.
 const ALL_STYLES = ['function', 'const', 'inline'];
 export const EXPORT_STYLES = { component: ['function', 'const'], 'client-component': ['function', 'const'], 'form-field': ['function', 'const'], route: ['function', 'const'], hook: ALL_STYLES, util: ALL_STYLES, context: ALL_STYLES, page: ALL_STYLES, 'server-action': ALL_STYLES };
-// The string form of "exports" covers these.
+// The string form of "exports" covers these; "files" applies to these only.
 export const COMPONENT_GENERATORS = ['component', 'client-component', 'form-field'];
+// "files": folder = x-y/x-y.tsx (default), flat = x-y.tsx, pascal = XY.tsx, pascal-folder = XY/XY.tsx.
+export const FILE_LAYOUTS = ['folder', 'flat', 'pascal', 'pascal-folder'];
 
 const SKIP_DIRS = new Set(['node_modules', '.git', '.next', 'dist', 'build', 'out', 'coverage', 'storybook-static', '.agents', '.codegen', '.turbo', '.vercel']);
 // shortcut: stops after this many source files; plenty to see a convention, raise it if a huge monorepo gets no suggestions.
@@ -73,6 +75,16 @@ function groupDir(kind, rel) {
   return dir;
 }
 
+// A component file's layout (FILE_LAYOUTS). A file named after its folder, or containing it (hero/module-hero.tsx), has its own folder.
+function layoutOf(rel) {
+  const own = path.posix.basename(rel).replace(/\.tsx$/, '');
+  if (own === 'index') return null;
+  const dir = path.posix.basename(path.posix.dirname(rel));
+  const pascal = /^[A-Z][A-Za-z0-9]*$/.test(own);
+  if (own.toLowerCase().includes(dir.toLowerCase())) return pascal ? 'pascal-folder' : 'folder';
+  return pascal ? 'pascal' : 'flat';
+}
+
 const dominant = (counts) => {
   const [[top, n] = [], ...rest] = Object.entries(counts).sort((a, b) => b[1] - a[1]);
   const total = n + rest.reduce((sum, [, c]) => sum + c, 0);
@@ -84,12 +96,15 @@ const dominant = (counts) => {
 export function detectConventions(root, { app, defaultOut = {}, config = {}, shadcnUi } = {}) {
   const styles = {};
   const folders = {};
+  const layouts = {};
   for (const rel of sourceFiles(root)) {
     const src = fs.readFileSync(path.join(root, rel), 'utf8');
     const kind = kindOf(rel, src, app);
     if (!kind) continue;
     const style = styleOf(kind, src);
     if (style) (styles[kind] ??= {})[style] = (styles[kind][style] ?? 0) + 1;
+    const layout = kind === 'component' && !(shadcnUi && rel.startsWith(`${shadcnUi}/`)) && layoutOf(rel);
+    if (layout) layouts[layout] = (layouts[layout] ?? 0) + 1;
     const dir = groupDir(kind, rel);
     (folders[kind] ??= {})[dir] = (folders[kind][dir] ?? 0) + 1;
   }
@@ -109,11 +124,16 @@ export function detectConventions(root, { app, defaultOut = {}, config = {}, sha
     if (top && kind in defaultOut && top !== defaultOut[kind] && config.out?.[kind] === undefined) out[kind] = top;
   }
 
+  const files = {};
+  const topLayout = dominant(layouts);
+  if (topLayout && topLayout !== 'folder') for (const g of COMPONENT_GENERATORS) if (config.files?.[g] === undefined) files[g] = topLayout;
+
   const top3 = (counts) => Object.fromEntries(Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 3));
   return {
     styles,
+    layouts,
     folders: Object.fromEntries(Object.entries(folders).filter(([k]) => k in defaultOut).map(([k, v]) => [k, top3(v)])),
-    suggest: { ...(Object.keys(exports).length && { exports }), ...(Object.keys(out).length && { out }) },
+    suggest: { ...(Object.keys(exports).length && { exports }), ...(Object.keys(out).length && { out }), ...(Object.keys(files).length && { files }) },
   };
 }
 

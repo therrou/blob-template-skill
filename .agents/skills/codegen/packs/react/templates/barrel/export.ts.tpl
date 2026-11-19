@@ -1,1 +1,1 @@
-export * from './{{name.kebab}}{{#unless withBarrel}}/{{name.kebab}}{{/unless}}';
+export * from './{{#if withBarrel}}{{file.folder}}{{else}}{{file.dir}}{{file.base}}{{/if}}';
