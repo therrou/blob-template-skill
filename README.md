@@ -57,9 +57,9 @@ The generator detects the stack first (`generate.mjs --detect`) and picks templa
 | `next` | `13`, `14`, `15`, `16` (16 = 16+) | installed `next` major |
 | `react` | `18`, `19` | installed `react` major (18 → `forwardRef`) |
 | `styling` | `tailwind-3`, `tailwind-4`, `styled-components`, `emotion`, `plain` | `tailwindcss` major, else `styled-components`, else `@emotion/*` (MUI included), else `plain` |
-| `primitives` | `radix`, `base`, `none` | `components.json` `style` prefix (`base-*` → Base UI `render` prop instead of `asChild`) |
+| `primitives` | `radix`, `base`, `none` | `components.json` `style` prefix (`base-*` → Base UI `render` prop instead of `asChild`); without it, what the ui folder's files import. The ui folder is the `components.json` alias, else `components/ui`, else `app/components/ui` |
 | `forms` | `shadcn`, `tanstack-form`, `formik`, `custom`, `none` | `components/ui/form.tsx` (shadcn Form), else `@tanstack/react-form` or `formik` in deps, else a `components/ui/form(s)/` folder. `form-field` runs on `shadcn` and `none` only; otherwise its error names the repo's form folder |
-| `cn` | an import path or `none` | the `cn` import in existing `components/ui/*`, then `components.json`, then `lib/utils` |
+| `cn` | an import path or `none` | the `cn` import in the existing ui folder (a relative `./utils` becomes its alias path), then `components.json`, then `lib/utils` |
 | `zod`, `table` | `3`/`4`, `8`/`9` | installed majors (used by upcoming generators) |
 | `srcDir` | `true`, `false` | `src/` exists |
 
