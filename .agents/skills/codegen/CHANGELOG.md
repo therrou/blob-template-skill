@@ -3,6 +3,14 @@
 Update a repo's copy by replacing `.agents/skills/codegen/` with the boilerplate version.
 Repo overrides live in `.codegen/templates/` and are never touched by an update.
 
+## 0.8.1 — 2026-11-19
+
+shadcn copied into a repo without `components.json`, as v0 and Figma Make exports do (e.g. primitives in `src/app/components/ui/`, `cn` in `./utils`):
+- The ui folder is `components/ui`, else `app/components/ui` (each also under `src/`). Before, it was always `components/ui`, so `form-field` asked to `npx shadcn add form input` over the repo's own copies.
+- `primitives` comes from what the ui folder's files import (`@radix-ui/*` or `@base-ui/*`) instead of `none`, and a relative `cn` import (`./utils`) becomes the alias path (`@/app/components/ui/utils`).
+- `--detect` never suggests the shadcn ui folder as `out`; it still counts towards export styles. In such a repo it now suggests the folder that holds the app's own components.
+- Evals: Haiku baseline `v0.8.0-haiku.json`, 52/54 (one run each of `footer-nav` and `pages-react18-profile-card`: a `<footer>` without `<nav>`, and `forwardRef` dropped while editing).
+
 ## 0.8.0 — 2026-11-19
 
 Repos with their own form system (their own `ui/form/` primitives on react-hook-form, or TanStack Form):

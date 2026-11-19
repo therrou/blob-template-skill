@@ -61,7 +61,7 @@ async function main() {
     const root = path.resolve(options.root ?? process.cwd());
     const profile = resolveProfile(root, options.profile).dims;
     const pack = loadPack(skillDir, profile.app.value.startsWith('next') ? 'next' : 'react');
-    return print({ ok: true, profile, conventions: conventionsFor(root, profile.app.value, pack, readConfig(root)) });
+    return print({ ok: true, profile, conventions: conventionsFor(root, profile, pack, readConfig(root)) });
   }
   if (options.format) {
     // The agent's own edits: format them with the repo's Prettier, which may not be runnable directly.

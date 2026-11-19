@@ -1,0 +1,1275 @@
+{
+  "version": "0.8.0",
+  "model": "haiku",
+  "date": "2026-11-19T12:42:57.470Z",
+  "runs": 3,
+  "cases": {
+    "badge-variants": {
+      "fixture": "next-app-tw4",
+      "passed": 3,
+      "runs": 3,
+      "results": [
+        {
+          "run": 1,
+          "status": "ok",
+          "pass": true,
+          "failures": [],
+          "toolCalls": 13,
+          "turns": 14,
+          "costUsd": 0.0115145,
+          "durationMs": 36133,
+          "newFiles": [
+            "components/badge/badge.tsx"
+          ],
+          "modifiedFiles": [],
+          "generatorCalls": [
+            "node .agents/skills/codegen/scripts/generate.mjs react component --name badge --element span --variants"
+          ],
+          "drift": [
+            {
+              "file": "components/badge/badge.tsx",
+              "kept": 0.875,
+              "lost": []
+            }
+          ]
+        },
+        {
+          "run": 2,
+          "status": "ok",
+          "pass": true,
+          "failures": [],
+          "toolCalls": 14,
+          "turns": 15,
+          "costUsd": 0.012591830000000002,
+          "durationMs": 41595,
+          "newFiles": [
+            "components/badge/badge.tsx"
+          ],
+          "modifiedFiles": [],
+          "generatorCalls": [
+            "node .agents/skills/codegen/scripts/generate.mjs next component --name badge --element span --variants"
+          ],
+          "drift": [
+            {
+              "file": "components/badge/badge.tsx",
+              "kept": 0.9375,
+              "lost": []
+            }
+          ]
+        },
+        {
+          "run": 3,
+          "status": "ok",
+          "pass": true,
+          "failures": [],
+          "toolCalls": 14,
+          "turns": 15,
+          "costUsd": 0.011776149999999999,
+          "durationMs": 36144,
+          "newFiles": [
+            "components/badge/badge.tsx"
+          ],
+          "modifiedFiles": [],
+          "generatorCalls": [
+            "node .agents/skills/codegen/scripts/generate.mjs next component --name badge --element span --variants 2>&1"
+          ],
+          "drift": [
+            {
+              "file": "components/badge/badge.tsx",
+              "kept": 0.9375,
+              "lost": []
+            }
+          ]
+        }
+      ]
+    },
+    "reuse-button": {
+      "fixture": "next-app-tw4",
+      "passed": 3,
+      "runs": 3,
+      "results": [
+        {
+          "run": 1,
+          "status": "ok",
+          "pass": true,
+          "failures": [],
+          "toolCalls": 4,
+          "turns": 5,
+          "costUsd": 0.0045188500000000005,
+          "durationMs": 14318,
+          "newFiles": [],
+          "modifiedFiles": [],
+          "generatorCalls": [],
+          "drift": []
+        },
+        {
+          "run": 2,
+          "status": "ok",
+          "pass": true,
+          "failures": [],
+          "toolCalls": 4,
+          "turns": 5,
+          "costUsd": 0.0045142,
+          "durationMs": 13044,
+          "newFiles": [],
+          "modifiedFiles": [],
+          "generatorCalls": [],
+          "drift": []
+        },
+        {
+          "run": 3,
+          "status": "ok",
+          "pass": true,
+          "failures": [],
+          "toolCalls": 5,
+          "turns": 6,
+          "costUsd": 0.00487157,
+          "durationMs": 13539,
+          "newFiles": [],
+          "modifiedFiles": [],
+          "generatorCalls": [],
+          "drift": []
+        }
+      ]
+    },
+    "newsletter-email-field": {
+      "fixture": "next-app-tw4",
+      "passed": 3,
+      "runs": 3,
+      "results": [
+        {
+          "run": 1,
+          "status": "ok",
+          "pass": true,
+          "failures": [],
+          "toolCalls": 15,
+          "turns": 16,
+          "costUsd": 0.010401800000000001,
+          "durationMs": 36690,
+          "newFiles": [
+            "components/email-field/email-field.tsx"
+          ],
+          "modifiedFiles": [],
+          "generatorCalls": [
+            "node .agents/skills/codegen/scripts/generate.mjs next form-field --name email-field --control input"
+          ],
+          "drift": [
+            {
+              "file": "components/email-field/email-field.tsx",
+              "kept": 1,
+              "lost": []
+            }
+          ]
+        },
+        {
+          "run": 2,
+          "status": "ok",
+          "pass": true,
+          "failures": [],
+          "toolCalls": 14,
+          "turns": 15,
+          "costUsd": 0.010323280000000002,
+          "durationMs": 34997,
+          "newFiles": [
+            "components/email-field/email-field.tsx"
+          ],
+          "modifiedFiles": [],
+          "generatorCalls": [
+            "node .agents/skills/codegen/scripts/generate.mjs next form-field --name EmailField --control input"
+          ],
+          "drift": [
+            {
+              "file": "components/email-field/email-field.tsx",
+              "kept": 1,
+              "lost": []
+            }
+          ]
+        },
+        {
+          "run": 3,
+          "status": "ok",
+          "pass": true,
+          "failures": [],
+          "toolCalls": 12,
+          "turns": 13,
+          "costUsd": 0.00958966,
+          "durationMs": 32976,
+          "newFiles": [
+            "components/newsletter-email/newsletter-email.tsx"
+          ],
+          "modifiedFiles": [],
+          "generatorCalls": [
+            "node .agents/skills/codegen/scripts/generate.mjs next form-field --name newsletter-email --control input"
+          ],
+          "drift": [
+            {
+              "file": "components/newsletter-email/newsletter-email.tsx",
+              "kept": 1,
+              "lost": []
+            }
+          ]
+        }
+      ]
+    },
+    "footer-nav": {
+      "fixture": "next-app-tw4",
+      "passed": 2,
+      "runs": 3,
+      "results": [
+        {
+          "run": 1,
+          "status": "ok",
+          "pass": true,
+          "failures": [],
+          "toolCalls": 11,
+          "turns": 12,
+          "costUsd": 0.01176105,
+          "durationMs": 43554,
+          "newFiles": [
+            "components/footer-nav/footer-nav.tsx"
+          ],
+          "modifiedFiles": [],
+          "generatorCalls": [
+            "node .agents/skills/codegen/scripts/generate.mjs next component --name FooterNav --element nav"
+          ],
+          "drift": [
+            {
+              "file": "components/footer-nav/footer-nav.tsx",
+              "kept": 0.875,
+              "lost": []
+            }
+          ]
+        },
+        {
+          "run": 2,
+          "status": "ok",
+          "pass": true,
+          "failures": [],
+          "toolCalls": 12,
+          "turns": 13,
+          "costUsd": 0.01042502,
+          "durationMs": 42364,
+          "newFiles": [
+            "components/footer-nav/footer-nav.tsx"
+          ],
+          "modifiedFiles": [],
+          "generatorCalls": [
+            "node .agents/skills/codegen/scripts/generate.mjs next component --name footer-nav --element nav"
+          ],
+          "drift": [
+            {
+              "file": "components/footer-nav/footer-nav.tsx",
+              "kept": 0.875,
+              "lost": []
+            }
+          ]
+        },
+        {
+          "run": 3,
+          "status": "ok",
+          "pass": false,
+          "failures": [
+            "missing /<nav\\b/ in files matching footer-nav\\.tsx$",
+            "missing /aria-label/ in files matching footer-nav\\.tsx$"
+          ],
+          "toolCalls": 14,
+          "turns": 15,
+          "costUsd": 0.011495670000000001,
+          "durationMs": 41191,
+          "newFiles": [
+            "components/footer-nav/footer-nav.tsx"
+          ],
+          "modifiedFiles": [],
+          "generatorCalls": [
+            "node .agents/skills/codegen/scripts/generate.mjs next component --name footer-nav --element footer"
+          ],
+          "drift": [
+            {
+              "file": "components/footer-nav/footer-nav.tsx",
+              "kept": 0.875,
+              "lost": []
+            }
+          ],
+          "workspace": "/var/folders/n2/vvn9zphd31118jwcszv8htkw0000gp/T/codegen-eval-next-app-tw4-42nfNR"
+        }
+      ]
+    },
+    "debounce-hook": {
+      "fixture": "next-app-tw4",
+      "passed": 3,
+      "runs": 3,
+      "results": [
+        {
+          "run": 1,
+          "status": "ok",
+          "pass": true,
+          "failures": [],
+          "toolCalls": 12,
+          "turns": 13,
+          "costUsd": 0.012182229999999997,
+          "durationMs": 42956,
+          "newFiles": [
+            "hooks/use-debounce.ts"
+          ],
+          "modifiedFiles": [],
+          "generatorCalls": [
+            "node .agents/skills/codegen/scripts/generate.mjs next hook --name debounce"
+          ],
+          "drift": [
+            {
+              "file": "hooks/use-debounce.ts",
+              "kept": null,
+              "lost": []
+            }
+          ]
+        },
+        {
+          "run": 2,
+          "status": "ok",
+          "pass": true,
+          "failures": [],
+          "toolCalls": 12,
+          "turns": 13,
+          "costUsd": 0.010718640000000001,
+          "durationMs": 33250,
+          "newFiles": [
+            "hooks/use-debounce.ts"
+          ],
+          "modifiedFiles": [],
+          "generatorCalls": [
+            "node .agents/skills/codegen/scripts/generate.mjs next hook --name useDebounce"
+          ],
+          "drift": [
+            {
+              "file": "hooks/use-debounce.ts",
+              "kept": null,
+              "lost": []
+            }
+          ]
+        },
+        {
+          "run": 3,
+          "status": "ok",
+          "pass": true,
+          "failures": [],
+          "toolCalls": 10,
+          "turns": 11,
+          "costUsd": 0.009049519999999998,
+          "durationMs": 28861,
+          "newFiles": [
+            "hooks/use-debounced-value.ts"
+          ],
+          "modifiedFiles": [],
+          "generatorCalls": [
+            "node .agents/skills/codegen/scripts/generate.mjs next hook --name use-debounced-value"
+          ],
+          "drift": [
+            {
+              "file": "hooks/use-debounced-value.ts",
+              "kept": null,
+              "lost": []
+            }
+          ]
+        }
+      ]
+    },
+    "pricing-route": {
+      "fixture": "next-app-tw4",
+      "passed": 3,
+      "runs": 3,
+      "results": [
+        {
+          "run": 1,
+          "status": "ok",
+          "pass": true,
+          "failures": [],
+          "toolCalls": 11,
+          "turns": 12,
+          "costUsd": 0.013285040000000003,
+          "durationMs": 44330,
+          "newFiles": [
+            "app/pricing/page.tsx",
+            "components/pricing-card/pricing-card.tsx"
+          ],
+          "modifiedFiles": [],
+          "generatorCalls": [
+            "node .agents/skills/codegen/scripts/generate.mjs next route --name pricing",
+            "node .agents/skills/codegen/scripts/generate.mjs next component --name PricingCard --element article"
+          ],
+          "drift": [
+            {
+              "file": "app/pricing/page.tsx",
+              "kept": null,
+              "lost": []
+            },
+            {
+              "file": "components/pricing-card/pricing-card.tsx",
+              "kept": 0.75,
+              "lost": []
+            }
+          ]
+        },
+        {
+          "run": 2,
+          "status": "ok",
+          "pass": true,
+          "failures": [],
+          "toolCalls": 12,
+          "turns": 13,
+          "costUsd": 0.01160867,
+          "durationMs": 37579,
+          "newFiles": [
+            "app/pricing/page.tsx"
+          ],
+          "modifiedFiles": [],
+          "generatorCalls": [
+            "node .agents/skills/codegen/scripts/generate.mjs next route --name pricing"
+          ],
+          "drift": [
+            {
+              "file": "app/pricing/page.tsx",
+              "kept": null,
+              "lost": []
+            }
+          ]
+        },
+        {
+          "run": 3,
+          "status": "ok",
+          "pass": true,
+          "failures": [],
+          "toolCalls": 11,
+          "turns": 12,
+          "costUsd": 0.010447840000000002,
+          "durationMs": 37922,
+          "newFiles": [
+            "app/pricing/page.tsx"
+          ],
+          "modifiedFiles": [],
+          "generatorCalls": [
+            "node .agents/skills/codegen/scripts/generate.mjs next route --name pricing 2>&1"
+          ],
+          "drift": [
+            {
+              "file": "app/pricing/page.tsx",
+              "kept": null,
+              "lost": []
+            }
+          ]
+        }
+      ]
+    },
+    "pages-about-route": {
+      "fixture": "next-pages-tw3",
+      "passed": 3,
+      "runs": 3,
+      "results": [
+        {
+          "run": 1,
+          "status": "ok",
+          "pass": true,
+          "failures": [],
+          "toolCalls": 12,
+          "turns": 13,
+          "costUsd": 0.01040638,
+          "durationMs": 32353,
+          "newFiles": [
+            "pages/about.tsx"
+          ],
+          "modifiedFiles": [],
+          "generatorCalls": [
+            "node .agents/skills/codegen/scripts/generate.mjs next route --name about"
+          ],
+          "drift": [
+            {
+              "file": "pages/about.tsx",
+              "kept": null,
+              "lost": []
+            }
+          ]
+        },
+        {
+          "run": 2,
+          "status": "ok",
+          "pass": true,
+          "failures": [],
+          "toolCalls": 11,
+          "turns": 12,
+          "costUsd": 0.010615619999999997,
+          "durationMs": 33736,
+          "newFiles": [
+            "pages/about.tsx"
+          ],
+          "modifiedFiles": [],
+          "generatorCalls": [
+            "node .agents/skills/codegen/scripts/generate.mjs next route --name about"
+          ],
+          "drift": [
+            {
+              "file": "pages/about.tsx",
+              "kept": null,
+              "lost": []
+            }
+          ]
+        },
+        {
+          "run": 3,
+          "status": "ok",
+          "pass": true,
+          "failures": [],
+          "toolCalls": 12,
+          "turns": 13,
+          "costUsd": 0.00927824,
+          "durationMs": 31779,
+          "newFiles": [
+            "pages/about.tsx"
+          ],
+          "modifiedFiles": [],
+          "generatorCalls": [
+            "node .agents/skills/codegen/scripts/generate.mjs next route --name about"
+          ],
+          "drift": [
+            {
+              "file": "pages/about.tsx",
+              "kept": null,
+              "lost": []
+            }
+          ]
+        }
+      ]
+    },
+    "pages-health-api": {
+      "fixture": "next-pages-tw3",
+      "passed": 3,
+      "runs": 3,
+      "results": [
+        {
+          "run": 1,
+          "status": "ok",
+          "pass": true,
+          "failures": [],
+          "toolCalls": 10,
+          "turns": 11,
+          "costUsd": 0.00915563,
+          "durationMs": 32149,
+          "newFiles": [
+            "pages/api/health.ts"
+          ],
+          "modifiedFiles": [],
+          "generatorCalls": [
+            "node .agents/skills/codegen/scripts/generate.mjs next api-route --name health"
+          ],
+          "drift": [
+            {
+              "file": "pages/api/health.ts",
+              "kept": null,
+              "lost": []
+            }
+          ]
+        },
+        {
+          "run": 2,
+          "status": "ok",
+          "pass": true,
+          "failures": [],
+          "toolCalls": 12,
+          "turns": 13,
+          "costUsd": 0.00938499,
+          "durationMs": 34200,
+          "newFiles": [
+            "pages/api/health.ts"
+          ],
+          "modifiedFiles": [],
+          "generatorCalls": [
+            "node .agents/skills/codegen/scripts/generate.mjs next api-route --name health"
+          ],
+          "drift": [
+            {
+              "file": "pages/api/health.ts",
+              "kept": null,
+              "lost": []
+            }
+          ]
+        },
+        {
+          "run": 3,
+          "status": "ok",
+          "pass": true,
+          "failures": [],
+          "toolCalls": 10,
+          "turns": 11,
+          "costUsd": 0.00861618,
+          "durationMs": 30322,
+          "newFiles": [
+            "pages/api/health.ts"
+          ],
+          "modifiedFiles": [],
+          "generatorCalls": [
+            "node .agents/skills/codegen/scripts/generate.mjs next api-route --name health"
+          ],
+          "drift": [
+            {
+              "file": "pages/api/health.ts",
+              "kept": null,
+              "lost": []
+            }
+          ]
+        }
+      ]
+    },
+    "pages-react18-profile-card": {
+      "fixture": "next-pages-tw3",
+      "passed": 2,
+      "runs": 3,
+      "results": [
+        {
+          "run": 1,
+          "status": "ok",
+          "pass": true,
+          "failures": [],
+          "toolCalls": 16,
+          "turns": 17,
+          "costUsd": 0.014747129999999997,
+          "durationMs": 62491,
+          "newFiles": [
+            "components/profile-card/profile-card.tsx"
+          ],
+          "modifiedFiles": [],
+          "generatorCalls": [
+            "node .agents/skills/codegen/scripts/generate.mjs next component --name profile-card --element article"
+          ],
+          "drift": [
+            {
+              "file": "components/profile-card/profile-card.tsx",
+              "kept": 0.8888888888888888,
+              "lost": []
+            }
+          ]
+        },
+        {
+          "run": 2,
+          "status": "ok",
+          "pass": true,
+          "failures": [],
+          "toolCalls": 16,
+          "turns": 17,
+          "costUsd": 0.013288870000000001,
+          "durationMs": 50643,
+          "newFiles": [
+            "components/profile-card/profile-card.tsx"
+          ],
+          "modifiedFiles": [],
+          "generatorCalls": [
+            "node .agents/skills/codegen/scripts/generate.mjs next component --name profile-card --element article"
+          ],
+          "drift": [
+            {
+              "file": "components/profile-card/profile-card.tsx",
+              "kept": 0.8888888888888888,
+              "lost": []
+            }
+          ]
+        },
+        {
+          "run": 3,
+          "status": "ok",
+          "pass": false,
+          "failures": [
+            "missing /forwardRef/ in files matching profile-card\\.tsx$"
+          ],
+          "toolCalls": 16,
+          "turns": 17,
+          "costUsd": 0.014403760000000003,
+          "durationMs": 56473,
+          "newFiles": [
+            "components/profile-card/profile-card.tsx"
+          ],
+          "modifiedFiles": [],
+          "generatorCalls": [
+            "node .agents/skills/codegen/scripts/generate.mjs next component --name profile-card --element article"
+          ],
+          "drift": [
+            {
+              "file": "components/profile-card/profile-card.tsx",
+              "kept": 0.7777777777777778,
+              "lost": []
+            }
+          ],
+          "workspace": "/var/folders/n2/vvn9zphd31118jwcszv8htkw0000gp/T/codegen-eval-next-pages-tw3-JPI2on"
+        }
+      ]
+    },
+    "styled-stat-card-barrel": {
+      "fixture": "vite-react18-styled",
+      "passed": 3,
+      "runs": 3,
+      "results": [
+        {
+          "run": 1,
+          "status": "ok",
+          "pass": true,
+          "failures": [],
+          "toolCalls": 14,
+          "turns": 15,
+          "costUsd": 0.013369869999999999,
+          "durationMs": 46673,
+          "newFiles": [
+            "src/components/stat-card/stat-card.tsx"
+          ],
+          "modifiedFiles": [
+            "src/components/index.ts"
+          ],
+          "generatorCalls": [
+            "node .agents/skills/codegen/scripts/generate.mjs react component --name stat-card --element article"
+          ],
+          "drift": [
+            {
+              "file": "src/components/stat-card/stat-card.tsx",
+              "kept": 0.9,
+              "lost": []
+            }
+          ]
+        },
+        {
+          "run": 2,
+          "status": "ok",
+          "pass": true,
+          "failures": [],
+          "toolCalls": 13,
+          "turns": 14,
+          "costUsd": 0.012678730000000001,
+          "durationMs": 43742,
+          "newFiles": [
+            "src/components/stat-card/stat-card.tsx"
+          ],
+          "modifiedFiles": [
+            "src/components/index.ts"
+          ],
+          "generatorCalls": [
+            "node .agents/skills/codegen/scripts/generate.mjs react component --name stat-card --element article"
+          ],
+          "drift": [
+            {
+              "file": "src/components/stat-card/stat-card.tsx",
+              "kept": 0.9,
+              "lost": []
+            }
+          ]
+        },
+        {
+          "run": 3,
+          "status": "ok",
+          "pass": true,
+          "failures": [],
+          "toolCalls": 17,
+          "turns": 18,
+          "costUsd": 0.01287912,
+          "durationMs": 40958,
+          "newFiles": [
+            "src/components/stat-card/index.ts",
+            "src/components/stat-card/stat-card.tsx"
+          ],
+          "modifiedFiles": [
+            "src/components/index.ts"
+          ],
+          "generatorCalls": [
+            "node .agents/skills/codegen/scripts/generate.mjs react component --name StatCard --element article --with-barrel"
+          ],
+          "drift": [
+            {
+              "file": "src/components/stat-card/index.ts",
+              "kept": null,
+              "lost": []
+            },
+            {
+              "file": "src/components/stat-card/stat-card.tsx",
+              "kept": 0.9,
+              "lost": []
+            }
+          ]
+        }
+      ]
+    },
+    "spa-local-storage-hook": {
+      "fixture": "vite-react18-styled",
+      "passed": 3,
+      "runs": 3,
+      "results": [
+        {
+          "run": 1,
+          "status": "ok",
+          "pass": true,
+          "failures": [],
+          "toolCalls": 12,
+          "turns": 13,
+          "costUsd": 0.01206113,
+          "durationMs": 40855,
+          "newFiles": [
+            "src/hooks/use-local-storage.ts"
+          ],
+          "modifiedFiles": [],
+          "generatorCalls": [
+            "node .agents/skills/codegen/scripts/generate.mjs react hook --name local-storage"
+          ],
+          "drift": [
+            {
+              "file": "src/hooks/use-local-storage.ts",
+              "kept": null,
+              "lost": []
+            }
+          ]
+        },
+        {
+          "run": 2,
+          "status": "ok",
+          "pass": true,
+          "failures": [],
+          "toolCalls": 12,
+          "turns": 13,
+          "costUsd": 0.013486700000000003,
+          "durationMs": 50100,
+          "newFiles": [
+            "src/hooks/use-local-storage.ts"
+          ],
+          "modifiedFiles": [],
+          "generatorCalls": [
+            "node .agents/skills/codegen/scripts/generate.mjs react hook --name useLocalStorage"
+          ],
+          "drift": [
+            {
+              "file": "src/hooks/use-local-storage.ts",
+              "kept": null,
+              "lost": []
+            }
+          ]
+        },
+        {
+          "run": 3,
+          "status": "ok",
+          "pass": true,
+          "failures": [],
+          "toolCalls": 18,
+          "turns": 19,
+          "costUsd": 0.014853739999999999,
+          "durationMs": 54078,
+          "newFiles": [
+            "src/hooks/use-local-storage.ts"
+          ],
+          "modifiedFiles": [],
+          "generatorCalls": [
+            "node .agents/skills/codegen/scripts/generate.mjs react hook --name useLocalStorage"
+          ],
+          "drift": [
+            {
+              "file": "src/hooks/use-local-storage.ts",
+              "kept": null,
+              "lost": []
+            }
+          ]
+        }
+      ]
+    },
+    "base-ui-call-to-action": {
+      "fixture": "next-base-ui",
+      "passed": 3,
+      "runs": 3,
+      "results": [
+        {
+          "run": 1,
+          "status": "ok",
+          "pass": true,
+          "failures": [],
+          "toolCalls": 12,
+          "turns": 13,
+          "costUsd": 0.01171414,
+          "durationMs": 44431,
+          "newFiles": [
+            "components/call-to-action/call-to-action.tsx"
+          ],
+          "modifiedFiles": [],
+          "generatorCalls": [
+            "node .agents/skills/codegen/scripts/generate.mjs next component --name call-to-action --element a --variants --as-child"
+          ],
+          "drift": [
+            {
+              "file": "components/call-to-action/call-to-action.tsx",
+              "kept": 0.8235294117647058,
+              "lost": []
+            }
+          ]
+        },
+        {
+          "run": 2,
+          "status": "ok",
+          "pass": true,
+          "failures": [],
+          "toolCalls": 11,
+          "turns": 12,
+          "costUsd": 0.011680810000000002,
+          "durationMs": 43155,
+          "newFiles": [
+            "components/call-to-action/call-to-action.tsx"
+          ],
+          "modifiedFiles": [],
+          "generatorCalls": [
+            "node .agents/skills/codegen/scripts/generate.mjs next component --name call-to-action --element a --variants --as-child --out components"
+          ],
+          "drift": [
+            {
+              "file": "components/call-to-action/call-to-action.tsx",
+              "kept": 0.7647058823529411,
+              "lost": []
+            }
+          ]
+        },
+        {
+          "run": 3,
+          "status": "ok",
+          "pass": true,
+          "failures": [],
+          "toolCalls": 16,
+          "turns": 17,
+          "costUsd": 0.014955630000000001,
+          "durationMs": 56540,
+          "newFiles": [
+            "components/call-to-action/call-to-action.tsx"
+          ],
+          "modifiedFiles": [],
+          "generatorCalls": [
+            "node .agents/skills/codegen/scripts/generate.mjs next component --name CallToAction --element a --variants --as-child"
+          ],
+          "drift": [
+            {
+              "file": "components/call-to-action/call-to-action.tsx",
+              "kept": 0.8235294117647058,
+              "lost": []
+            }
+          ]
+        }
+      ]
+    },
+    "legacy-react17-refusal": {
+      "fixture": "react17-legacy",
+      "passed": 3,
+      "runs": 3,
+      "results": [
+        {
+          "run": 1,
+          "status": "ok",
+          "pass": true,
+          "failures": [],
+          "toolCalls": 6,
+          "turns": 7,
+          "costUsd": 0.00710487,
+          "durationMs": 20105,
+          "newFiles": [],
+          "modifiedFiles": [],
+          "generatorCalls": [],
+          "drift": []
+        },
+        {
+          "run": 2,
+          "status": "ok",
+          "pass": true,
+          "failures": [],
+          "toolCalls": 4,
+          "turns": 5,
+          "costUsd": 0.00578836,
+          "durationMs": 18863,
+          "newFiles": [],
+          "modifiedFiles": [],
+          "generatorCalls": [
+            "17\" .agents/skills/codegen/SKILL.md .agents/skills/codegen/CHANGELOG.md .agents/skills/codegen/scripts/generate.mjs 2>/dev/null"
+          ],
+          "drift": []
+        },
+        {
+          "run": 3,
+          "status": "ok",
+          "pass": true,
+          "failures": [],
+          "toolCalls": 4,
+          "turns": 5,
+          "costUsd": 0.006343710000000001,
+          "durationMs": 17624,
+          "newFiles": [],
+          "modifiedFiles": [],
+          "generatorCalls": [],
+          "drift": []
+        }
+      ]
+    },
+    "ask-before-installing-select": {
+      "fixture": "next-app-tw4",
+      "passed": 3,
+      "runs": 3,
+      "results": [
+        {
+          "run": 1,
+          "status": "ok",
+          "pass": true,
+          "failures": [],
+          "toolCalls": 4,
+          "turns": 5,
+          "costUsd": 0.006848910000000001,
+          "durationMs": 16756,
+          "newFiles": [],
+          "modifiedFiles": [],
+          "generatorCalls": [],
+          "drift": []
+        },
+        {
+          "run": 2,
+          "status": "ok",
+          "pass": true,
+          "failures": [],
+          "toolCalls": 7,
+          "turns": 8,
+          "costUsd": 0.008458529999999999,
+          "durationMs": 24473,
+          "newFiles": [],
+          "modifiedFiles": [],
+          "generatorCalls": [],
+          "drift": []
+        },
+        {
+          "run": 3,
+          "status": "ok",
+          "pass": true,
+          "failures": [],
+          "toolCalls": 5,
+          "turns": 6,
+          "costUsd": 0.0077047,
+          "durationMs": 21200,
+          "newFiles": [],
+          "modifiedFiles": [],
+          "generatorCalls": [],
+          "drift": []
+        }
+      ]
+    },
+    "edit-existing-button": {
+      "fixture": "next-app-tw4",
+      "passed": 3,
+      "runs": 3,
+      "results": [
+        {
+          "run": 1,
+          "status": "ok",
+          "pass": true,
+          "failures": [],
+          "toolCalls": 7,
+          "turns": 8,
+          "costUsd": 0.00660265,
+          "durationMs": 20305,
+          "newFiles": [],
+          "modifiedFiles": [
+            "app/globals.css",
+            "components/ui/button.tsx"
+          ],
+          "generatorCalls": [],
+          "drift": []
+        },
+        {
+          "run": 2,
+          "status": "ok",
+          "pass": true,
+          "failures": [],
+          "toolCalls": 8,
+          "turns": 9,
+          "costUsd": 0.006370840000000001,
+          "durationMs": 20553,
+          "newFiles": [],
+          "modifiedFiles": [
+            "app/globals.css",
+            "components/ui/button.tsx"
+          ],
+          "generatorCalls": [],
+          "drift": []
+        },
+        {
+          "run": 3,
+          "status": "ok",
+          "pass": true,
+          "failures": [],
+          "toolCalls": 9,
+          "turns": 10,
+          "costUsd": 0.006671369999999999,
+          "durationMs": 21866,
+          "newFiles": [],
+          "modifiedFiles": [
+            "app/globals.css",
+            "components/ui/button.tsx"
+          ],
+          "generatorCalls": [],
+          "drift": []
+        }
+      ]
+    },
+    "explain-cn-no-files": {
+      "fixture": "next-app-tw4",
+      "passed": 3,
+      "runs": 3,
+      "results": [
+        {
+          "run": 1,
+          "status": "ok",
+          "pass": true,
+          "failures": [],
+          "toolCalls": 1,
+          "turns": 2,
+          "costUsd": 0.00267448,
+          "durationMs": 6239,
+          "newFiles": [],
+          "modifiedFiles": [],
+          "generatorCalls": [],
+          "drift": []
+        },
+        {
+          "run": 2,
+          "status": "ok",
+          "pass": true,
+          "failures": [],
+          "toolCalls": 1,
+          "turns": 2,
+          "costUsd": 0.00263198,
+          "durationMs": 5626,
+          "newFiles": [],
+          "modifiedFiles": [],
+          "generatorCalls": [],
+          "drift": []
+        },
+        {
+          "run": 3,
+          "status": "ok",
+          "pass": true,
+          "failures": [],
+          "toolCalls": 1,
+          "turns": 2,
+          "costUsd": 0.00264498,
+          "durationMs": 5791,
+          "newFiles": [],
+          "modifiedFiles": [],
+          "generatorCalls": [],
+          "drift": []
+        }
+      ]
+    },
+    "tanstack-email-field": {
+      "fixture": "next-tanstack-form",
+      "passed": 3,
+      "runs": 3,
+      "results": [
+        {
+          "run": 1,
+          "status": "ok",
+          "pass": true,
+          "failures": [],
+          "toolCalls": 12,
+          "turns": 13,
+          "costUsd": 0.007239140000000001,
+          "durationMs": 23898,
+          "newFiles": [
+            "components/ui/forms/email-field.tsx"
+          ],
+          "modifiedFiles": [],
+          "generatorCalls": [],
+          "drift": []
+        },
+        {
+          "run": 2,
+          "status": "ok",
+          "pass": true,
+          "failures": [],
+          "toolCalls": 14,
+          "turns": 15,
+          "costUsd": 0.00889622,
+          "durationMs": 28789,
+          "newFiles": [
+            "components/ui/forms/email-field.tsx"
+          ],
+          "modifiedFiles": [],
+          "generatorCalls": [],
+          "drift": []
+        },
+        {
+          "run": 3,
+          "status": "ok",
+          "pass": true,
+          "failures": [],
+          "toolCalls": 14,
+          "turns": 15,
+          "costUsd": 0.009177460000000002,
+          "durationMs": 31257,
+          "newFiles": [
+            "components/ui/forms/email-field.tsx"
+          ],
+          "modifiedFiles": [],
+          "generatorCalls": [],
+          "drift": []
+        }
+      ]
+    },
+    "custom-form-phone-field": {
+      "fixture": "next-custom-form",
+      "passed": 3,
+      "runs": 3,
+      "results": [
+        {
+          "run": 1,
+          "status": "ok",
+          "pass": true,
+          "failures": [],
+          "toolCalls": 9,
+          "turns": 10,
+          "costUsd": 0.00800594,
+          "durationMs": 27572,
+          "newFiles": [
+            "components/ui/form/phone-field.tsx"
+          ],
+          "modifiedFiles": [
+            "components/ui/form/index.ts"
+          ],
+          "generatorCalls": [],
+          "drift": []
+        },
+        {
+          "run": 2,
+          "status": "ok",
+          "pass": true,
+          "failures": [],
+          "toolCalls": 17,
+          "turns": 18,
+          "costUsd": 0.00915531,
+          "durationMs": 28664,
+          "newFiles": [
+            "components/ui/form/phone-field.tsx"
+          ],
+          "modifiedFiles": [
+            "components/ui/form/index.ts"
+          ],
+          "generatorCalls": [],
+          "drift": []
+        },
+        {
+          "run": 3,
+          "status": "ok",
+          "pass": true,
+          "failures": [],
+          "toolCalls": 11,
+          "turns": 12,
+          "costUsd": 0.0086983,
+          "durationMs": 28281,
+          "newFiles": [
+            "components/ui/form/phone-field.tsx"
+          ],
+          "modifiedFiles": [
+            "components/ui/form/index.ts"
+          ],
+          "generatorCalls": [],
+          "drift": []
+        }
+      ]
+    }
+  }
+}

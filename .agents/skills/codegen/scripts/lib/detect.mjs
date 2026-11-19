@@ -47,13 +47,18 @@ export function resolveOut(root, out) {
   return isDir('src') ? withSrc : out;
 }
 
-// shadcn's components.json is the source of truth for import aliases.
+// shadcn's components.json is the source of truth for import aliases. Without it (shadcn copied in, e.g. a v0 or
+// Figma Make export), the ui folder is components/ui, else app/components/ui, behind the default @/ alias.
 export function detectShadcnAliases(root) {
   try {
     const { aliases = {} } = JSON.parse(fs.readFileSync(path.join(root, 'components.json'), 'utf8'));
     return { utils: aliases.utils ?? null, ui: aliases.ui ?? null };
   } catch {
-    return { utils: null, ui: null };
+    const ui = ['components/ui', 'app/components/ui'].find((d) => {
+      const dir = path.join(root, resolveOut(root, d));
+      return fs.existsSync(dir) && fs.statSync(dir).isDirectory();
+    });
+    return { utils: null, ui: ui ? `@/${ui}` : null };
   }
 }
 

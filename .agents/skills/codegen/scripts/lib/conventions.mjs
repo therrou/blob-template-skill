@@ -3,7 +3,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-import { resolveOut } from './detect.mjs';
+import { detectShadcnAliases, resolveAliasDir, resolveOut } from './detect.mjs';
 
 // Export styles each generator's templates can write: function (`export function x`), const (`const x = …` + one `export { x }`), inline (`export const x = …`).
 // Route files are default exports, so their const style is `const X = …; export default X`. Route handlers stay functions.
@@ -80,7 +80,8 @@ const dominant = (counts) => {
 };
 
 // defaultOut: { generator: folder the generator writes to with no config }. config: the current .codegen/config.json.
-export function detectConventions(root, { app, defaultOut = {}, config = {} } = {}) {
+// shadcnUi: the shadcn CLI's folder, never suggested as a place for new code.
+export function detectConventions(root, { app, defaultOut = {}, config = {}, shadcnUi } = {}) {
   const styles = {};
   const folders = {};
   for (const rel of sourceFiles(root)) {
@@ -104,7 +105,7 @@ export function detectConventions(root, { app, defaultOut = {}, config = {} } = 
 
   const out = {};
   for (const [kind, counts] of Object.entries(folders)) {
-    const top = dominant(counts);
+    const top = dominant(Object.fromEntries(Object.entries(counts).filter(([dir]) => dir !== shadcnUi)));
     if (top && kind in defaultOut && top !== defaultOut[kind] && config.out?.[kind] === undefined) out[kind] = top;
   }
 
@@ -117,11 +118,12 @@ export function detectConventions(root, { app, defaultOut = {}, config = {} } = 
 }
 
 // --detect: conventions with each generator's default folder in this repo (generators with a fixed folder only, not routes).
-export function conventionsFor(root, app, pack, config) {
+export function conventionsFor(root, profile, pack, config) {
   const defaultOut = Object.fromEntries(
     Object.entries(pack.generators)
       .filter(([, gen]) => typeof gen.out === 'string')
       .map(([name, gen]) => [name, resolveOut(root, gen.out).split(path.sep).join('/')]),
   );
-  return detectConventions(root, { app, defaultOut, config });
+  const shadcnUi = profile.primitives.value === 'none' ? undefined : resolveAliasDir(root, detectShadcnAliases(root).ui ?? '@/components/ui');
+  return detectConventions(root, { app: profile.app.value, defaultOut, config, shadcnUi });
 }

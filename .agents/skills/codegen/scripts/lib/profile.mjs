@@ -52,9 +52,20 @@ function versionDim(root, pkg, { min, max, newest, label = String }) {
   return { value: label(Math.min(m, max)), source: 'detected' };
 }
 
+// shadcn without components.json: what the ui folder's own files (not subfolders) import.
+function primitivesFromUi(root) {
+  const uiDir = path.join(root, resolveAliasDir(root, detectShadcnAliases(root).ui ?? '@/components/ui'));
+  if (!fs.existsSync(uiDir)) return 'none';
+  const src = fs.readdirSync(uiDir, { withFileTypes: true })
+    .filter((e) => e.isFile() && /\.[jt]sx$/.test(e.name))
+    .map((e) => fs.readFileSync(path.join(uiDir, e.name), 'utf8'))
+    .join('\n');
+  return /from ['"]@base-ui/.test(src) ? 'base' : /from ['"]@radix-ui\//.test(src) ? 'radix' : 'none';
+}
+
 function detectPrimitives(root) {
   const file = path.join(root, 'components.json');
-  if (!fs.existsSync(file)) return { value: 'none', source: 'detected' };
+  if (!fs.existsSync(file)) return { value: primitivesFromUi(root), source: 'detected' };
   let style;
   try {
     ({ style } = JSON.parse(fs.readFileSync(file, 'utf8')));
@@ -86,7 +97,8 @@ const CN_IMPORT = /import\s*\{[^}]*\bcn\b[^}]*\}\s*from\s*['"]([^'"]+)['"]/;
 
 // The project's own ui components show how cn is imported today (shadcn moved it to the `cn` package in 2026).
 function detectCnImport(root) {
-  const uiDir = path.join(root, resolveAliasDir(root, detectShadcnAliases(root).ui ?? '@/components/ui'));
+  const ui = detectShadcnAliases(root).ui ?? '@/components/ui';
+  const uiDir = path.join(root, resolveAliasDir(root, ui));
   if (fs.existsSync(uiDir)) {
     // Flat (ui/button.tsx, shadcn) first, then one folder deep (ui/button/button.tsx).
     const entries = fs.readdirSync(uiDir, { withFileTypes: true }).sort((a, b) => a.name.localeCompare(b.name));
@@ -96,7 +108,8 @@ function detectCnImport(root) {
     ].filter((f) => /\.[jt]sx?$/.test(f) && fs.statSync(f).isFile());
     for (const file of files) {
       const m = CN_IMPORT.exec(fs.readFileSync(file, 'utf8'));
-      if (m) return m[1];
+      // A relative import (./utils) becomes the alias path, so it works from any folder.
+      if (m) return m[1].startsWith('.') ? path.posix.join(ui, path.relative(uiDir, path.dirname(file)).split(path.sep).join('/'), m[1]) : m[1];
     }
   }
   return detectCn(root) ?? 'none';

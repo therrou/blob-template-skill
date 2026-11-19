@@ -511,6 +511,25 @@ test('--detect prints the profile; every result carries it', () => {
   assert.equal(run(root, 'react', 'util', '--name', 'x', '--profile', 'nope=1').json.ok, false);
 });
 
+test('shadcn copied in without components.json (src/app/components/ui): primitives, form system, cn alias, and its folder is never suggested', () => {
+  const files = {
+    'src/app/components/ui/utils.ts': 'export function cn(...a: string[]) { return a.join(" "); }\n',
+    'src/app/components/ui/form.tsx': 'import { Slot } from "@radix-ui/react-slot";\nimport { cn } from "./utils";\nexport function FormItem() { return null; }\n',
+    'src/app/components/ui/input.tsx': 'import { cn } from "./utils";\nexport function Input() { return null; }\n',
+  };
+  for (let i = 0; i < 6; i++) files[`src/app/components/ui/p${i}.tsx`] = `export function P${i}() { return null; }\n`;
+  for (let i = 0; i < 5; i++) files[`src/app/components/App${i}.tsx`] = `export function App${i}() { return null; }\n`;
+  const root = makeRepo({ deps: { next: '^16', react: '^19', tailwindcss: '^4', 'react-hook-form': '^7' }, dirs: ['src/app'], files });
+  const { profile, conventions } = run(root, '--detect').json;
+  assert.deepEqual([profile.primitives.value, profile.forms.value, profile.cn.value], ['radix', 'shadcn', '@/app/components/ui/utils']);
+  assert.deepEqual(conventions.suggest, { out: { component: 'src/app/components' } });
+  const gen = run(root, 'next', 'form-field', '--name', 'Email', '--control', 'input').json;
+  assert.equal(gen.ok, true, gen.error);
+  const src = fs.readFileSync(path.join(root, gen.created.find((f) => f.endsWith('email.tsx'))), 'utf8');
+  assert.match(src, /from '@\/app\/components\/ui\/form'/);
+  assert.match(src, /from '@\/app\/components\/ui\/utils'|from '@\/app\/components\/ui\/input'/);
+});
+
 test('--detect suggests "exports" and "out" only for clear conventions, and not for keys already configured', () => {
   const files = {};
   const many = (n, make) => Array.from({ length: n }, (_, i) => make(`n${i}`)).forEach(([f, src]) => (files[f] = src));
