@@ -3,6 +3,10 @@
 Update a repo's copy by replacing `.agents/skills/codegen/` with the boilerplate version.
 Repo overrides live in `.codegen/templates/` and are never touched by an update.
 
+## 0.7.1 — 2026-11-19
+
+- SKILL.md: the `--out` red flag no longer uses `components/ui` as its example, and a new red flag says that in shadcn repos `components/ui/` belongs to the CLI, so new components go next to it. The 0.7.0 evals put 2 of 48 new components there.
+
 ## 0.7.0 — 2026-11-18
 
 Export styles for every generator, and detection of the repo's conventions (real repos often write hooks as `export const` while keeping route handlers as functions):

@@ -57,4 +57,5 @@ To change a template for one repo, copy it from `$SKILL/packs/<pack>/templates/<
 - You are about to add `'use client'` to a page, a layout, or a large component. Extract a small client leaf instead.
 - You are about to pick `--element div` for something users click, or a list, heading or landmark.
 - You are about to install a package or shadcn primitive without asking the user.
-- You are using `--out` to break the repo's folder conventions. Use it to follow them (e.g. `components/ui` vs `components/modules`), or set `out` in `.codegen/config.json`.
+- You are using `--out` to break the repo's folder conventions. Use it to follow them (e.g. `components/modules` for page sections), or set `out` in `.codegen/config.json`.
+- You are about to put a new component in `components/ui/` of a shadcn repo (`components.json` exists). That folder belongs to the shadcn CLI; new components go next to it, unless the repo's own components already live there.
