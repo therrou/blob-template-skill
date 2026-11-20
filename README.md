@@ -14,11 +14,14 @@ An AI agent skill for **deterministic code generation**, in the spirit of plop b
   packs/next/                    (borrows react templates via "@react/...")
 AGENTS.md, CLAUDE.md, .cursor/rules/codegen.mdc, .github/copilot-instructions.md
                                  pointers so each agent finds the skill
+BETA.md                          guide for beta testers (install, first run, feedback)
 test/                            engine tests (not shipped to repos)
 evals/                           behavior evals (not shipped to repos)
 ```
 
 ## Adding it to a repo
+
+Trying it as a beta tester? Start with [BETA.md](BETA.md): install, a first setup prompt, settings, and what feedback to send.
 
 1. Copy `.agents/skills/codegen/` into the repo.
 2. Merge the pointer text from `AGENTS.md` into the repo's `AGENTS.md`, and copy `.github/copilot-instructions.md` and `.cursor/rules/codegen.mdc`. `CLAUDE.md` imports `AGENTS.md`.
@@ -196,6 +199,5 @@ The form-field primitives (`select`, `checkbox`, `textarea`) are added as thin R
 | aspnet-mvc-js (`wwwroot/js` view modules + `.cshtml` partials) | planned. Open question: can these repos rely on Node being installed? |
 
 Also still to do:
-- Adjust the defaults against a real company repo.
 - Support the newer shadcn `field` primitive in `form-field`.
 - Package as `@company/codegen` with `init` / `update` (see the 0.2.0 design doc).
