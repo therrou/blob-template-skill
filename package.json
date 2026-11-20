@@ -1,5 +1,6 @@
 {
   "name": "blob-template-skill",
+  "version": "0.9.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -9,5 +10,14 @@
   },
   "engines": {
     "node": ">=20"
-  }
+  },
+  "bin": {
+    "codegen-skill": "bin/install.mjs"
+  },
+  "files": [
+    "bin",
+    ".agents/skills/codegen",
+    ".cursor/rules/codegen.mdc",
+    "AGENTS.md"
+  ]
 }

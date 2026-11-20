@@ -15,6 +15,7 @@ An AI agent skill for **deterministic code generation**, in the spirit of plop b
 AGENTS.md, CLAUDE.md, .cursor/rules/codegen.mdc, .github/copilot-instructions.md
                                  pointers so each agent finds the skill
 BETA.md                          guide for beta testers (install, first run, feedback)
+bin/install.mjs                  the npx installer and updater
 test/                            engine tests (not shipped to repos)
 evals/                           behavior evals (not shipped to repos)
 ```
@@ -23,11 +24,15 @@ evals/                           behavior evals (not shipped to repos)
 
 Trying it as a beta tester? Start with [BETA.md](BETA.md): install, a first setup prompt, settings, and what feedback to send.
 
-1. Copy `.agents/skills/codegen/` into the repo.
-2. Merge the pointer text from `AGENTS.md` into the repo's `AGENTS.md`, and copy `.github/copilot-instructions.md` and `.cursor/rules/codegen.mdc`. `CLAUDE.md` imports `AGENTS.md`.
-3. Optional: customize templates for that repo in `.codegen/templates/<pack>/<template path>`.
+From the app root (the folder with `package.json`):
 
-To update, replace the skill folder with the newer version and check `CHANGELOG.md`. Overrides in `.codegen/` stay untouched.
+```bash
+npx github:therrou/blob-template-skill            # or --dir <app root>
+```
+
+`bin/install.mjs` copies `.agents/skills/codegen/` (replacing an older copy, so the same command updates it) and adds the pointer each agent reads: a "Code generation" section in `AGENTS.md`, `@AGENTS.md` in `CLAUDE.md`, `.cursor/rules/codegen.mdc` and `.github/copilot-instructions.md`. It appends to existing files once and never duplicates. It never touches `.codegen/`. Then it prints the detected stack. No dependencies; read access to this repo is enough.
+
+Optional: customize templates for that repo in `.codegen/templates/<pack>/<template path>`. After an update, check `CHANGELOG.md`.
 
 ## Using the generator directly
 

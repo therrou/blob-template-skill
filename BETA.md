@@ -2,7 +2,7 @@
 
 Thanks for trying this. The skill gives your AI coding agent a generator for React and Next.js files: components, form fields, hooks, contexts, utils, pages, routes, API routes and server actions. The generator writes the skeleton in your repo's style, and the agent writes the real logic. The goal is code that looks like your team wrote it, on the first try.
 
-You need about 10 minutes to set it up. Then use your agent as you normally would.
+Setup is one command and one prompt. Then use your agent as you normally would.
 
 ## Before you start
 
@@ -27,33 +27,24 @@ If you use one of these, your feedback is the most valuable.
 - **Change your config silently.** It suggests settings and writes them only if you agree.
 - **Touch anything outside your repo.**
 
-To remove it, delete the folders you copied in.
+To remove it, delete `.agents/skills/codegen/` and the "Code generation" section the installer added to your instruction files.
 
 ## 1. Install
 
-Copy these from the folder you were sent into the root of your app, the folder that holds its `package.json`.
-
-| Copy | To |
-|---|---|
-| `.agents/skills/codegen/` (the whole folder) | `.agents/skills/codegen/` |
-| `.cursor/rules/codegen.mdc` (Cursor only) | `.cursor/rules/codegen.mdc` |
-| `.github/copilot-instructions.md` (Copilot only) | add its text to yours, or copy it if you have none |
-
-Then add this to your `AGENTS.md`, or create one. Claude Code reads it through `CLAUDE.md`, so make sure `CLAUDE.md` contains the line `@AGENTS.md`.
-
-```markdown
-## Code generation
-
-Before creating any React or Next.js component, form field, hook, context, util, page, route, API route or server action, read and follow `.agents/skills/codegen/SKILL.md`. Scaffold with its generator instead of writing boilerplate by hand.
-```
-
-Check that it runs:
+In your app root (the folder with `package.json`), run:
 
 ```bash
-node .agents/skills/codegen/scripts/generate.mjs --detect
+npx github:therrou/blob-template-skill
 ```
 
-You should get JSON describing your stack (`profile`) and your code's conventions (`conventions`). If a value under `profile` looks wrong, note it for your feedback.
+You need read access to the GitHub repo. That command:
+- adds the skill to `.agents/skills/codegen/`;
+- points your agents at it: `AGENTS.md`, `CLAUDE.md`, `.cursor/rules/codegen.mdc` and `.github/copilot-instructions.md`. Existing files keep their content: the instruction is appended once, and never twice;
+- prints what it detected about your stack (Next/React version, styling, shadcn, form library). If something there looks wrong, note it for your feedback.
+
+To update later, run the same command. It replaces the skill folder and leaves your `.codegen/` settings and template overrides alone.
+
+Commit the added files, so everyone on the project gets the same skill.
 
 ## 2. Let the agent set it up for your repo
 
