@@ -3,6 +3,13 @@
 Update a repo's copy by replacing `.agents/skills/codegen/` with the boilerplate version.
 Repo overrides live in `.codegen/templates/` and are never touched by an update.
 
+## 1.0.0 — 2026-11-20
+
+First stable release. The generator, templates and settings are the same as 0.9.0; this release is about installing and sharing it:
+- One-command install and update: `npx github:therrou/blob-template-skill`. It adds the skill and the pointer each agent reads (`AGENTS.md`, `CLAUDE.md`, the Cursor rule, the Copilot instructions), appending once and never duplicating, and never touches `.codegen/`. Pin a release with `#v1.0.0`.
+- The README starts with a quick start, what it generates, the settings and what it won't do. Feedback goes through a GitHub issue template.
+- Since 0.5: checked on three production Next.js codebases with different conventions (export styles, folders, file names, form systems, shadcn with or without `components.json`). The evals pass 48/48 with Sonnet and 52/54 with Haiku.
+
 ## 0.9.0 — 2026-11-19
 
 Component file names (a pilot repo names components `ProductCard.tsx`, flat; the generator always wrote `product-card/product-card.tsx`):

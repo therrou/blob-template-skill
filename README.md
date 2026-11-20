@@ -1,59 +1,88 @@
-# blob-template-skill
+# Codegen skill
 
-An AI agent skill for **deterministic code generation**, in the spirit of plop but with no dependencies. The agent runs a bundled generator to scaffold components, hooks, routes and similar files, and then writes only the real logic. The conventions live in templates instead of prompts, so every agent produces the same structure.
+An agent skill for React and Next.js that makes your AI coding agent write code the way your team already does. The agent runs a bundled generator for the boilerplate (components, form fields, hooks, contexts, utils, pages, routes, API routes, server actions) and writes only the real logic. The conventions live in templates, not prompts, so every agent and every developer gets the same structure.
 
-## What's inside
+It works with Claude Code, Cursor and GitHub Copilot, needs Node 20+, and has no dependencies.
 
-```
-.agents/skills/codegen/          ← copy this folder into a repo
-  SKILL.md                       agent workflow (Agent Skills format)
-  VERSION, CHANGELOG.md
-  scripts/generate.mjs           generator CLI (Node ≥ 20, no dependencies)
-  scripts/check-tokens.mjs       design-token and leftover-placeholder checker
-  packs/react/                   pack.json + templates/ + CONVENTIONS.md
-  packs/next/                    (borrows react templates via "@react/...")
-AGENTS.md, CLAUDE.md, .cursor/rules/codegen.mdc, .github/copilot-instructions.md
-                                 pointers so each agent finds the skill
-BETA.md                          guide for beta testers (install, first run, feedback)
-bin/install.mjs                  the npx installer and updater
-test/                            engine tests (not shipped to repos)
-evals/                           behavior evals (not shipped to repos)
-```
+## Quick start
 
-## Adding it to a repo
-
-Trying it as a beta tester? Start with [BETA.md](BETA.md): install, a first setup prompt, settings, and what feedback to send.
-
-From the app root (the folder with `package.json`):
+**1. Install**, in your app root (the folder with `package.json`):
 
 ```bash
-npx github:therrou/blob-template-skill            # or --dir <app root>
+npx github:therrou/blob-template-skill
 ```
 
-`bin/install.mjs` copies `.agents/skills/codegen/` (replacing an older copy, so the same command updates it) and adds the pointer each agent reads: a "Code generation" section in `AGENTS.md`, `@AGENTS.md` in `CLAUDE.md`, `.cursor/rules/codegen.mdc` and `.github/copilot-instructions.md`. It appends to existing files once and never duplicates. It never touches `.codegen/`. Then it prints the detected stack. No dependencies; read access to this repo is enough.
+This adds the skill to `.agents/skills/codegen/` and points your agents at it: a "Code generation" section in `AGENTS.md`, `@AGENTS.md` in `CLAUDE.md`, `.cursor/rules/codegen.mdc` and `.github/copilot-instructions.md`. Existing files keep their content. The section is appended once and never duplicated. Then it prints the stack it detected. Commit the added files, so the whole team gets the same skill.
 
-Optional: customize templates for that repo in `.codegen/templates/<pack>/<template path>`. After an update, check `CHANGELOG.md`.
+**2. Let the agent fit it to your repo.** Ask:
 
-## Using the generator directly
+> Get the codegen skill ready for this repo so that what it generates matches how our existing code is written.
+
+The agent reads your existing code and proposes settings, with counts as evidence. For example: "most components are `const X = …` with `export { X }` (40 of 44 files)", or "files are named `ProductCard.tsx`". It writes `.codegen/config.json` only after you agree.
+
+**3. Use your agent as usual.** You don't need to mention the skill:
+
+- "Add a ProductCard component with a compact variant."
+- "Add an email field to the signup form."
+- "Add a useDebounce hook."
+- "Add a GET API route at /api/health that is never cached."
+
+The agent runs the generator, fills in the logic, then formats and checks the files.
+
+## What it generates
+
+| Pack | Generators |
+|---|---|
+| `next` (App or Pages Router) | `component` (Server Component), `client-component`, `form-field`, `hook`, `context`, `util`, `route` (page, layout, loading, error), `api-route`, `server-action` |
+| `react` (Vite SPA) | `component`, `form-field`, `hook`, `context`, `util`, `page` |
+
+Components get a semantic root element, cva variants and `asChild` when asked, the repo's `cn()`, and its styling: Tailwind tokens, or `theme` values in styled-components, Emotion and MUI. Tests (Vitest or Jest) and Storybook stories are optional. Try one without an agent:
 
 ```bash
 node .agents/skills/codegen/scripts/generate.mjs --list next
-node .agents/skills/codegen/scripts/generate.mjs next component --name UserCard --element article
-node .agents/skills/codegen/scripts/generate.mjs next client-component --name CtaButton --element button --variants --as-child
-node .agents/skills/codegen/scripts/generate.mjs next form-field --name EmailField --control input
-node .agents/skills/codegen/scripts/generate.mjs next route --name "blog/[slug]" --with-loading --with-error
-node .agents/skills/codegen/scripts/generate.mjs next api-route --name "users/[id]" --with-test --dry-run
-node .agents/skills/codegen/scripts/check-tokens.mjs src/components/user-card
+node .agents/skills/codegen/scripts/generate.mjs next component --name ProductCard --element article --variants --dry-run
 ```
 
-Guarantees:
-- The generator never overwrites. If any file it would create exists, nothing is written.
-- Runs are all-or-nothing, including edits to existing files: if any step fails, created files are removed and edited files are restored.
-- Paths outside the repo root are rejected.
-- Unknown flags are errors.
-- Output is always JSON.
-- Missing packages or shadcn primitives are an error with `missing`, `missingUi` and an `install` command; nothing is written.
-- It detects `src/`, Vitest or Jest, the Storybook framework, the Next major version (sync or async `params`), the shadcn `components.json` aliases, `cn()`, and Radix Slot.
+## Settings
+
+`.codegen/config.json` in your repo. The setup prompt above writes it for you.
+
+```json
+{
+  "exports": { "component": "const", "hook": "inline" },
+  "out": { "component": "src/components/modules", "util": "src/utils" },
+  "files": { "component": "pascal" },
+  "profile": { "styling": "tailwind-4" }
+}
+```
+
+| Key | What it sets | Values |
+|---|---|---|
+| `exports` | export style per generator | `function` (default), `const` (`const X = …` + `export { X }`), `inline` (`export const x = …`) |
+| `out` | folder per generator | any folder in the repo |
+| `files` | component file names | `folder` (default, `product-card/product-card.tsx`), `flat` (`product-card.tsx`), `pascal` (`ProductCard.tsx`), `pascal-folder` (`ProductCard/ProductCard.tsx`) |
+| `profile` | corrects a detected value | see `generate.mjs --detect` and [Supported stacks](#supported-stacks) |
+
+To change a template for one repo, copy it into `.codegen/templates/<pack>/<template path>` and edit the copy.
+
+## What it won't do
+
+- **Overwrite files.** If a file it would create exists, nothing is written.
+- **Install packages without asking.** Missing packages or shadcn primitives come back as an install command, and the agent asks you first.
+- **Change your settings silently.** It suggests settings and writes them only on a yes.
+- **Generate for a stack it doesn't support.** It says why, instead of guessing. For a form system other than shadcn Form (your own form components, TanStack Form, Formik), it points the agent at your existing fields.
+
+## Updating and removing
+
+Run the install command again to update. It replaces `.agents/skills/codegen/` and never touches `.codegen/`. To pin a release, add its tag, e.g. `npx github:therrou/blob-template-skill#v1.0.0`. Each release's changes are in [`CHANGELOG.md`](.agents/skills/codegen/CHANGELOG.md) and on the [Releases](https://github.com/therrou/blob-template-skill/releases) page.
+
+To remove it, delete `.agents/skills/codegen/` and the "Code generation" section from your agent instruction files.
+
+## Feedback
+
+[Open an issue](https://github.com/therrou/blob-template-skill/issues/new?template=feedback.md). The template asks for your stack, agent, prompt, what happened and the `--detect` output, which is usually enough to reproduce a problem. Especially useful: files in the wrong folder or with the wrong name, a style your team doesn't use, or the agent ignoring the skill.
+
+Tested most with Claude Code, on three production Next.js codebases and an eval suite. Cursor, Copilot and Vite SPAs are supported, but there's less real-world evidence yet, so reports from those setups help most.
 
 ## Supported stacks
 
@@ -77,6 +106,30 @@ The generator detects the stack first (`generate.mjs --detect`) and picks templa
 - The same file sets repo conventions: `"out": { "util": "src/utils" }` (a generator's folder, relative to the root; `--out` still wins) and `"exports"`. `"const"` writes components and form fields as `const X = …` + `export { X }` with a local props type. A map sets the style per generator, e.g. `{ "component": "const", "hook": "inline", "util": "const", "route": "const" }`. Styles are `function` (default), `const` (one export list, or `export default X` for route files) and `inline` (`export const x = …`; not for components). API route handlers stay `export async function GET`.
 - `"files"` sets the file layout of component, client-component and form-field: `folder` (default, `my-card/my-card.tsx`), `flat` (`my-card.tsx`), `pascal` (`MyCard.tsx`) or `pascal-folder` (`MyCard/MyCard.tsx`). Tests, stories and the parent `index.ts` follow it; `--with-barrel` needs a folder layout.
 - `--detect` also reads the existing code and returns `conventions`: per-generator style and folder counts, component file layouts (the shadcn ui folder excluded), and under `suggest` the config values that are clear (at least 5 files, at least twice as common as each alternative) and not set yet. The agent proposes them to the user; nothing is written automatically.
+- Not supported yet: context file names other than `x-context.tsx` (use a template override) and non-React stacks (see the roadmap).
+
+## Using the generator directly
+
+Agents call the generator for you; these commands are for trying it out or scripting.
+
+```bash
+node .agents/skills/codegen/scripts/generate.mjs --list next
+node .agents/skills/codegen/scripts/generate.mjs next component --name UserCard --element article
+node .agents/skills/codegen/scripts/generate.mjs next client-component --name CtaButton --element button --variants --as-child
+node .agents/skills/codegen/scripts/generate.mjs next form-field --name EmailField --control input
+node .agents/skills/codegen/scripts/generate.mjs next route --name "blog/[slug]" --with-loading --with-error
+node .agents/skills/codegen/scripts/generate.mjs next api-route --name "users/[id]" --with-test --dry-run
+node .agents/skills/codegen/scripts/check-tokens.mjs src/components/user-card
+```
+
+Guarantees:
+- The generator never overwrites. If any file it would create exists, nothing is written.
+- Runs are all-or-nothing, including edits to existing files: if any step fails, created files are removed and edited files are restored.
+- Paths outside the repo root are rejected.
+- Unknown flags are errors.
+- Output is always JSON.
+- Missing packages or shadcn primitives are an error with `missing`, `missingUi` and an `install` command; nothing is written.
+- It detects `src/`, Vitest or Jest, the Storybook framework, the Next major version (sync or async `params`), the shadcn `components.json` aliases, `cn()`, and Radix Slot.
 
 ## Template syntax
 
@@ -120,6 +173,25 @@ Recommended existing ESLint rules that match the conventions:
 | Kebab-case file names | `unicorn/filename-case` with `{ case: 'kebabCase' }` |
 | Accessibility | `plugin:jsx-a11y/recommended` (`click-events-have-key-events`, `no-static-element-interactions`, `anchor-is-valid`) |
 | Tailwind class hygiene | `eslint-plugin-tailwindcss` or `eslint-plugin-better-tailwindcss` (`no-contradicting-classname`, `no-unregistered-classes`) |
+
+# Developing the skill
+
+## What's inside
+
+```
+.agents/skills/codegen/          ← copy this folder into a repo
+  SKILL.md                       agent workflow (Agent Skills format)
+  VERSION, CHANGELOG.md
+  scripts/generate.mjs           generator CLI (Node ≥ 20, no dependencies)
+  scripts/check-tokens.mjs       design-token and leftover-placeholder checker
+  packs/react/                   pack.json + templates/ + CONVENTIONS.md
+  packs/next/                    (borrows react templates via "@react/...")
+AGENTS.md, CLAUDE.md, .cursor/rules/codegen.mdc, .github/copilot-instructions.md
+                                 pointers so each agent finds the skill
+bin/install.mjs                  the npx installer and updater
+test/                            engine tests (not shipped to repos)
+evals/                           behavior evals (not shipped to repos)
+```
 
 ## Adding a pack or generator
 
@@ -205,4 +277,3 @@ The form-field primitives (`select`, `checkbox`, `textarea`) are added as thin R
 
 Also still to do:
 - Support the newer shadcn `field` primitive in `form-field`.
-- Package as `@company/codegen` with `init` / `update` (see the 0.2.0 design doc).

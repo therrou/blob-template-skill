@@ -64,4 +64,4 @@ try {
 console.log(`
 Next: ask your agent
   "Get the codegen skill ready for this repo so that what it generates matches how our existing code is written."
-Then commit the added files. Guide and feedback template: https://github.com/therrou/blob-template-skill/blob/main/BETA.md`);
+Then commit the added files. Docs and feedback: https://github.com/therrou/blob-template-skill`);
